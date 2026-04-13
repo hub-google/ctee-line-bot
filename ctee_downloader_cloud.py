@@ -45,7 +45,6 @@ def add_banner_to_raw_image(img_data, keywords_str):
     except: return img_data
 
 def upload_to_cdn(image_data):
-    """跟本地版完全一樣的圖床上傳邏輯"""
     try:
         r = requests.post("https://uguu.se/upload.php", files={"files[]": ("image.jpg", image_data, "image/jpeg")}, timeout=15)
         if r.status_code == 200: return r.json()["files"][0]["url"]
@@ -56,28 +55,19 @@ def send_flex_push(img_urls):
     if not LINE_ACCESS_TOKEN or not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
     
-    # 分批發送確保穩定性
-    BATCH_SIZE = 10
-    total_images = len(img_urls)
+    # 這裡恢復為跟本地版完全一樣：單則訊息、全部塞入
+    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d (Cloud Turbo)"), "weight": "bold", "size": "lg"}]
     
-    for start_idx in range(0, total_images, BATCH_SIZE):
-        batch = img_urls[start_idx : start_idx + BATCH_SIZE]
-        batch_num = (start_idx // BATCH_SIZE) + 1
-        total_batches = (total_images + BATCH_SIZE - 1) // BATCH_SIZE
-        
-        body_contents = [{"type": "text", "text": f"{datetime.now().strftime('%Y/%m/%d')} (Cloud Turbo v2) - {batch_num}/{total_batches}", "weight": "bold", "size": "md"}]
-        
-        for i in range(0, len(batch), 2):
-            row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": batch[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": batch[i]}}]}
-            if i + 1 < len(batch):
-                row["contents"].append({"type": "image", "url": batch[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": batch[i+1]}})
-            else: 
-                row["contents"].append({"type": "filler"})
-            body_contents.append(row)
+    for i in range(0, len(img_urls), 2):
+        row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
+        if i + 1 < len(img_urls):
+            row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
+        else: 
+            row["contents"].append({"type": "filler"})
+        body_contents.append(row)
             
-        payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": f"📸 工商快報 ({batch_num}/{total_batches})", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
-        requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
-        time.sleep(1)
+    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商快訊 (雲端版)", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
+    requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
 def persistent_worker(task_queue, shared_results, session):
     try:
