@@ -5,8 +5,10 @@ import requests
 import re
 import subprocess
 import io
+import queue
+import threading
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw, ImageFont, ImageFile
 
@@ -30,8 +32,6 @@ GITHUB_ASSETS_URL = f"https://raw.githubusercontent.com/hub-google/ctee-line-bot
 
 # 掃描用 (requests)
 scan_executor = ThreadPoolExecutor(max_workers=30)
-# 下載用 (Playwright)
-capture_executor = ThreadPoolExecutor(max_workers=5)
 
 def get_temp_path():
     path = os.path.join(os.getcwd(), "temp_images")
@@ -53,7 +53,6 @@ def add_banner_to_raw_image(img_data, keywords_str):
     except: return img_data
 
 def upload_to_github_assets(folder):
-    print("[Cloud] 正在執行資產同步至 GitHub Assets 分支...")
     try:
         subprocess.run(["git", "config", "user.name", "GitHub Actions"], capture_output=True)
         subprocess.run(["git", "config", "user.email", "actions@github.com"], capture_output=True)
@@ -66,7 +65,7 @@ def upload_to_github_assets(folder):
 def send_flex_push(img_filenames):
     if not LINE_ACCESS_TOKEN or not img_filenames: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
-    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d (Cloud Turbo)"), "weight": "bold", "size": "lg"}]
+    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d (Cloud Turbo v2)"), "weight": "bold", "size": "lg"}]
     img_urls = [f"{GITHUB_ASSETS_URL}/temp_images/{f}?t={int(time.time())}" for f in img_filenames]
     for i in range(0, len(img_urls), 2):
         row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
@@ -77,42 +76,50 @@ def send_flex_push(img_filenames):
     payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商雲端快訊", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
     requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
-def parallel_download_worker(aid, hit, temp_folder, session):
+def persistent_worker(task_queue, temp_folder, captured_filenames, session):
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
-            page.goto(hit['url'], wait_until="domcontentloaded", timeout=15000)
-            page.evaluate(f'document.getElementById("{aid}").click()')
-            
-            img_src = None
-            for _ in range(15):
-                img_src = page.evaluate('() => { const img = document.querySelector(".fancybox-image"); return img ? img.src : null; }')
-                if img_src and "data:image" not in img_src: break
-                time.sleep(0.3)
-            
-            if not img_src or "限登入會員使用" in page.content():
-                login_link = page.query_selector(".fancybox-container a:has-text('會員登入')")
-                if login_link:
-                    login_link.click()
-                    page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
-                    page.wait_for_load_state("networkidle")
-                    page.goto(hit['url'], wait_until="domcontentloaded"); page.evaluate(f'document.getElementById("{aid}").click()')
-                    time.sleep(1)
-                    img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
+            while not task_queue.empty():
+                try:
+                    aid, hit = task_queue.get_nowait()
+                except queue.Empty: break
+                
+                try:
+                    page.goto(hit['url'], wait_until="domcontentloaded", timeout=15000)
+                    page.evaluate(f'document.getElementById("{aid}").click()')
+                    page.wait_for_selector(".fancybox-container.fancybox-is-open", timeout=8000)
+                    
+                    img_src = None
+                    for _ in range(15):
+                        img_src = page.evaluate('() => { const img = document.querySelector(".fancybox-image"); return img ? img.src : null; }')
+                        if img_src and "data:image" not in img_src: break
+                        time.sleep(0.3)
+                    
+                    if not img_src or "限登入會員使用" in page.content():
+                        login_link = page.query_selector(".fancybox-container a:has-text('會員登入')")
+                        if login_link:
+                            login_link.click()
+                            page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
+                            page.wait_for_load_state("networkidle")
+                            page.goto(hit['url'], wait_until="domcontentloaded"); page.evaluate(f'document.getElementById("{aid}").click()')
+                            time.sleep(1)
+                            img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
 
-            if img_src:
-                resp = session.get(img_src, timeout=15)
-                if resp.status_code == 200:
-                    final_data = add_banner_to_raw_image(resp.content, hit['kw'])
-                    filename = f"{aid}_{hit['kw']}.jpg"
-                    local_path = os.path.join(temp_folder, filename)
-                    with open(local_path, "wb") as f: f.write(final_data)
-                    browser.close()
-                    return filename
+                    if img_src:
+                        resp = session.get(img_src, timeout=15)
+                        if resp.status_code == 200:
+                            final_data = add_banner_to_raw_image(resp.content, hit['kw'])
+                            filename = f"{aid}_{hit['kw']}.jpg"
+                            local_path = os.path.join(temp_folder, filename)
+                            with open(local_path, "wb") as f: f.write(final_data)
+                            captured_filenames.append(filename)
+                    page.keyboard.press("Escape")
+                except: pass
+                finally: task_queue.task_done()
             browser.close()
     except: pass
-    return None
 
 def main():
     start_time = time.time()
@@ -143,16 +150,20 @@ def main():
             return [{"aid": aid, "kw": ",".join(sorted([kw for kw in KEYWORDS if kw in ft])), "url": url} for aid, ft in matches if any(k in ft for k in KEYWORDS)]
         except: return []
 
-    print("[Cloud] 正在檢索全報內容...")
     scan_results = list(scan_executor.map(scan_url, all_section_urls))
     unique_hits = {h['aid']: h for r in scan_results for h in r}
-    print(f"[Cloud] 發現 {len(unique_hits)} 則文章。啟動 5 核心並行下載...")
+    print(f"[Cloud] 發現 {len(unique_hits)} 則文章。啟動 5 分頁長駐並行...")
+
+    task_queue = queue.Queue()
+    for item in unique_hits.items(): task_queue.put(item)
 
     captured_filenames = []
-    futures = [capture_executor.submit(parallel_download_worker, aid, hit, temp_folder, session) for aid, hit in unique_hits.items()]
-    for f in as_completed(futures):
-        res = f.result()
-        if res: captured_filenames.append(res)
+    threads = []
+    for _ in range(5):
+        t = threading.Thread(target=persistent_worker, args=(task_queue, temp_folder, captured_filenames, session))
+        t.start()
+        threads.append(t)
+    for t in threads: t.join()
 
     if captured_filenames:
         if upload_to_github_assets("temp_images"):
@@ -165,4 +176,3 @@ if __name__ == "__main__":
         sys.exit(1)
     main()
     scan_executor.shutdown(wait=False)
-    capture_executor.shutdown(wait=False)
