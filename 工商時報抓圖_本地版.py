@@ -60,14 +60,16 @@ def send_flex_push(img_urls):
     if not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
     today_date = datetime.now().strftime("%Y/%m/%d")
-    body_contents = [{"type": "text", "text": today_date, "weight": "bold", "size": "lg"}]
+    final_title = f"{today_date} ({len(img_urls)}則新聞)"
+    
+    body_contents = [{"type": "text", "text": final_title, "weight": "bold", "size": "lg"}]
     for i in range(0, len(img_urls), 2):
         row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
         if i + 1 < len(img_urls):
             row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
         else: row["contents"].append({"type": "filler"})
         body_contents.append(row)
-    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": today_date, "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
+    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": final_title, "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
     requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
 def persistent_worker(task_queue, target_folder, shared_results, session):
