@@ -3,11 +3,9 @@ import sys
 import time
 import requests
 import re
-import subprocess
 import io
 import queue
 import threading
-import urllib.parse
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from playwright.sync_api import sync_playwright
@@ -29,15 +27,8 @@ KEYWORDS = ["凱基", "保險", "壽險", "金控",
     "宏泰人壽", "保誠", "安聯", "法巴", "友邦","保險","壽險","產險","中國人壽"]
 BASE_URL = "https://readers.ctee.com.tw/cm"
 TARGET_PAPER = "工商時報"
-GITHUB_ASSETS_URL = f"https://raw.githubusercontent.com/hub-google/ctee-line-bot/assets"
 
 scan_executor = ThreadPoolExecutor(max_workers=30)
-capture_executor = ThreadPoolExecutor(max_workers=5)
-
-def get_temp_path():
-    path = os.path.join(os.getcwd(), "temp_images")
-    if not os.path.exists(path): os.makedirs(path)
-    return path
 
 def add_banner_to_raw_image(img_data, keywords_str):
     try:
@@ -53,47 +44,42 @@ def add_banner_to_raw_image(img_data, keywords_str):
         return out_buf.getvalue()
     except: return img_data
 
-def upload_to_github_assets(folder):
+def upload_to_cdn(image_data):
+    """跟本地版完全一樣的圖床上傳邏輯"""
     try:
-        subprocess.run(["git", "config", "user.name", "GitHub Actions"], capture_output=True)
-        subprocess.run(["git", "config", "user.email", "actions@github.com"], capture_output=True)
-        subprocess.run(["git", "add", f"{folder}/"], capture_output=True)
-        subprocess.run(["git", "commit", "-m", "update cloud_assets"], capture_output=True)
-        subprocess.run(["git", "push", "origin", "master:assets", "--force"], capture_output=True)
-        return True
-    except: return False
+        r = requests.post("https://uguu.se/upload.php", files={"files[]": ("image.jpg", image_data, "image/jpeg")}, timeout=15)
+        if r.status_code == 200: return r.json()["files"][0]["url"]
+    except: pass
+    return None
 
-def send_flex_push(img_filenames):
-    if not LINE_ACCESS_TOKEN or not img_filenames: return
+def send_flex_push(img_urls):
+    if not LINE_ACCESS_TOKEN or not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
     
-    # 限制每則 Flex 消息最多放 10 張圖，避免超過 JSON 大小限制 (30KB)
+    # 分批發送確保穩定性
     BATCH_SIZE = 10
-    total_images = len(img_filenames)
+    total_images = len(img_urls)
     
     for start_idx in range(0, total_images, BATCH_SIZE):
-        batch = img_filenames[start_idx : start_idx + BATCH_SIZE]
+        batch = img_urls[start_idx : start_idx + BATCH_SIZE]
         batch_num = (start_idx // BATCH_SIZE) + 1
         total_batches = (total_images + BATCH_SIZE - 1) // BATCH_SIZE
         
-        body_contents = [{"type": "text", "text": f"{datetime.now().strftime('%Y/%m/%d')} (Cloud Turbo v2) - Part {batch_num}/{total_batches}", "weight": "bold", "size": "md"}]
+        body_contents = [{"type": "text", "text": f"{datetime.now().strftime('%Y/%m/%d')} (Cloud Turbo v2) - {batch_num}/{total_batches}", "weight": "bold", "size": "md"}]
         
-        # URL 安全編碼：處理中文檔名與逗號
-        img_urls = [f"{GITHUB_ASSETS_URL}/temp_images/{urllib.parse.quote(f)}?t={int(time.time())}" for f in batch]
-        
-        for i in range(0, len(img_urls), 2):
-            row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
-            if i + 1 < len(img_urls):
-                row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
+        for i in range(0, len(batch), 2):
+            row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": batch[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": batch[i]}}]}
+            if i + 1 < len(batch):
+                row["contents"].append({"type": "image", "url": batch[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": batch[i+1]}})
             else: 
                 row["contents"].append({"type": "filler"})
             body_contents.append(row)
             
         payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": f"📸 工商快報 ({batch_num}/{total_batches})", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
         requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
-        time.sleep(1) # 間隔 1 秒發送避免 LINE 頻率限流
+        time.sleep(1)
 
-def persistent_worker(task_queue, temp_folder, captured_filenames, session):
+def persistent_worker(task_queue, shared_results, session):
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -126,10 +112,8 @@ def persistent_worker(task_queue, temp_folder, captured_filenames, session):
                         resp = session.get(img_src, timeout=15)
                         if resp.status_code == 200:
                             final_data = add_banner_to_raw_image(resp.content, hit['kw'])
-                            filename = f"{aid}_{hit['kw']}.jpg"
-                            local_path = os.path.join(temp_folder, filename)
-                            with open(local_path, "wb") as f: f.write(final_data)
-                            captured_filenames.append(filename)
+                            u_url = upload_to_cdn(final_data)
+                            if u_url: shared_results.append(u_url)
                     page.keyboard.press("Escape")
                 except: pass
                 finally: task_queue.task_done()
@@ -140,7 +124,6 @@ def main():
     if not USERNAME or not PASSWORD:
         sys.exit(1)
     
-    temp_folder = get_temp_path()
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
@@ -170,17 +153,16 @@ def main():
 
     task_queue = queue.Queue()
     for item in unique_hits.items(): task_queue.put(item)
-    captured_filenames = []
+    shared_results = []
     threads = []
     for _ in range(5):
-        t = threading.Thread(target=persistent_worker, args=(task_queue, temp_folder, captured_filenames, session))
+        t = threading.Thread(target=persistent_worker, args=(task_queue, shared_results, session))
         t.start()
         threads.append(t)
     for t in threads: t.join()
 
-    if captured_filenames:
-        if upload_to_github_assets("temp_images"):
-            send_flex_push(captured_filenames)
+    if shared_results:
+        send_flex_push(shared_results)
     print(f"[Cloud] 任務結束。")
 
 if __name__ == "__main__":
