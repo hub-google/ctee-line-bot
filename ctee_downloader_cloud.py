@@ -7,33 +7,16 @@ import subprocess
 import io
 import queue
 import threading
+import urllib.parse
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw, ImageFont, ImageFile
 
-# --- CMD 診斷日誌系統 ---
-class CloudLogger(object):
-    def __init__(self, filename="cloud_log.txt"):
-        self.terminal = sys.stdout
-        self.log = open(filename, "a", encoding="utf-8")
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-        self.log.flush()
-    def flush(self):
-        self.terminal.flush()
-        self.log.flush()
-
-sys.stdout = CloudLogger()
-sys.stderr = sys.stdout
-
-print(f"\n--- 雲端執行診斷啟動: {datetime.now()} ---")
-
 # 讓 PIL 處理流式內容
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-# --- 秘密資料區 (僅由 GitHub Actions 從 Secrets 注入) ---
+# --- 秘密資料區 ---
 USERNAME = os.getenv("CTEE_USER")
 PASSWORD = os.getenv("CTEE_PASS")
 LINE_ACCESS_TOKEN = os.getenv("LINE_ACCESS_TOKEN")
@@ -49,6 +32,7 @@ TARGET_PAPER = "工商時報"
 GITHUB_ASSETS_URL = f"https://raw.githubusercontent.com/hub-google/ctee-line-bot/assets"
 
 scan_executor = ThreadPoolExecutor(max_workers=30)
+capture_executor = ThreadPoolExecutor(max_workers=5)
 
 def get_temp_path():
     path = os.path.join(os.getcwd(), "temp_images")
@@ -67,48 +51,51 @@ def add_banner_to_raw_image(img_data, keywords_str):
         out_buf = io.BytesIO()
         new_img.save(out_buf, format="JPEG", quality=95)
         return out_buf.getvalue()
-    except Exception as e:
-        print(f"[Banner Error] {e}")
-        return img_data
+    except: return img_data
 
 def upload_to_github_assets(folder):
-    print(f"[Cloud] 正在執行資產同步至 GitHub Assets 分支...")
     try:
         subprocess.run(["git", "config", "user.name", "GitHub Actions"], capture_output=True)
         subprocess.run(["git", "config", "user.email", "actions@github.com"], capture_output=True)
         subprocess.run(["git", "add", f"{folder}/"], capture_output=True)
         subprocess.run(["git", "commit", "-m", "update cloud_assets"], capture_output=True)
-        result = subprocess.run(["git", "push", "origin", "master:assets", "--force"], capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"[Git Push Error] {result.stderr}")
-            return False
+        subprocess.run(["git", "push", "origin", "master:assets", "--force"], capture_output=True)
         return True
-    except Exception as e:
-        print(f"[Git Error] {e}")
-        return False
+    except: return False
 
 def send_flex_push(img_filenames):
-    print(f"[Cloud] 正在準備 LINE FLEX 推播...")
-    if not LINE_ACCESS_TOKEN or not img_filenames:
-        print("[Cloud] LINE TOKEN 或圖片列表為空，取消推播。")
-        return
+    if not LINE_ACCESS_TOKEN or not img_filenames: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
-    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d (Cloud Diagnostic)"), "weight": "bold", "size": "lg"}]
-    img_urls = [f"{GITHUB_ASSETS_URL}/temp_images/{f}?t={int(time.time())}" for f in img_filenames]
-    for i in range(0, len(img_urls), 2):
-        row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
-        if i + 1 < len(img_urls):
-            row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
-        else: row["contents"].append({"type": "filler"})
-        body_contents.append(row)
-    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商雲端診斷報", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
-    r = requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
-    print(f"[Cloud] LINE API 回傳碼: {r.status_code}")
+    
+    # 限制每則 Flex 消息最多放 10 張圖，避免超過 JSON 大小限制 (30KB)
+    BATCH_SIZE = 10
+    total_images = len(img_filenames)
+    
+    for start_idx in range(0, total_images, BATCH_SIZE):
+        batch = img_filenames[start_idx : start_idx + BATCH_SIZE]
+        batch_num = (start_idx // BATCH_SIZE) + 1
+        total_batches = (total_images + BATCH_SIZE - 1) // BATCH_SIZE
+        
+        body_contents = [{"type": "text", "text": f"{datetime.now().strftime('%Y/%m/%d')} (Cloud Turbo v2) - Part {batch_num}/{total_batches}", "weight": "bold", "size": "md"}]
+        
+        # URL 安全編碼：處理中文檔名與逗號
+        img_urls = [f"{GITHUB_ASSETS_URL}/temp_images/{urllib.parse.quote(f)}?t={int(time.time())}" for f in batch]
+        
+        for i in range(0, len(img_urls), 2):
+            row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
+            if i + 1 < len(img_urls):
+                row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
+            else: 
+                row["contents"].append({"type": "filler"})
+            body_contents.append(row)
+            
+        payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": f"📸 工商快報 ({batch_num}/{total_batches})", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
+        requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
+        time.sleep(1) # 間隔 1 秒發送避免 LINE 頻率限流
 
 def persistent_worker(task_queue, temp_folder, captured_filenames, session):
     try:
         with sync_playwright() as p:
-            print("[Worker] 啟動瀏覽器核心...")
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             while not task_queue.empty():
@@ -116,26 +103,23 @@ def persistent_worker(task_queue, temp_folder, captured_filenames, session):
                     aid, hit = task_queue.get_nowait()
                 except queue.Empty: break
                 
-                print(f"[Worker] 正在處理文章 {aid}...")
                 try:
-                    page.goto(hit['url'], wait_until="domcontentloaded", timeout=20000)
+                    page.goto(hit['url'], wait_until="domcontentloaded", timeout=15000)
                     page.evaluate(f'document.getElementById("{aid}").click()')
-                    
                     img_src = None
-                    for _ in range(20):
+                    for _ in range(15):
                         img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
                         if img_src and "data:image" not in img_src: break
-                        time.sleep(0.5)
+                        time.sleep(0.3)
                     
-                    if not img_src:
-                        print(f"[Worker] {aid} 抓不到圖片，嘗試登入修復...")
+                    if not img_src or "限登入會員使用" in page.content():
                         login_link = page.query_selector(".fancybox-container a:has-text('會員登入')")
                         if login_link:
                             login_link.click()
                             page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
                             page.wait_for_load_state("networkidle")
                             page.goto(hit['url'], wait_until="domcontentloaded"); page.evaluate(f'document.getElementById("{aid}").click()')
-                            time.sleep(2)
+                            time.sleep(1)
                             img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
 
                     if img_src:
@@ -146,25 +130,18 @@ def persistent_worker(task_queue, temp_folder, captured_filenames, session):
                             local_path = os.path.join(temp_folder, filename)
                             with open(local_path, "wb") as f: f.write(final_data)
                             captured_filenames.append(filename)
-                            print(f"[Worker] {aid} 下載成功！")
                     page.keyboard.press("Escape")
-                except Exception as e:
-                    print(f"[Worker Error] {aid}: {e}")
+                except: pass
                 finally: task_queue.task_done()
             browser.close()
-    except Exception as e:
-        print(f"[Critical Worker Error] {e}")
+    except: pass
 
 def main():
-    print(f"[System] 偵測到環境變數: USER={USERNAME is not None}, PASS={PASSWORD is not None}")
     if not USERNAME or not PASSWORD:
-        print("[Error] 缺失 CTEE 帳號或密碼 Secrets！")
-        return
-
-    temp_folder = get_temp_path()
+        sys.exit(1)
     
+    temp_folder = get_temp_path()
     with sync_playwright() as p:
-        print("[System] 執行初始掃描...")
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -172,11 +149,9 @@ def main():
         if page.query_selector("input#UserName"):
             page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
             page.wait_for_load_state("networkidle")
-
         page.goto(BASE_URL)
         links = sorted(list(set(re.findall(r'/cm/\d+/[a-z0-9]+', page.content()))))
         all_section_urls = [f"https://readers.ctee.com.tw{l}" for l in links if any(k in l for k in ["aa", "ab", "ac", "asa"])]
-        
         session = requests.Session()
         for ck in context.cookies(): session.cookies.set(ck['name'], ck['value'], domain=ck['domain'])
         session.headers.update({"User-Agent": "Mozilla/5.0"})
@@ -191,36 +166,23 @@ def main():
 
     scan_results = list(scan_executor.map(scan_url, all_section_urls))
     unique_hits = {h['aid']: h for r in scan_results for h in r}
-    print(f"[System] 發現 {len(unique_hits)} 則文章。")
-
-    if not unique_hits:
-        print("[System] 今日無符合關鍵字新聞，結束任務。")
-        return
+    print(f"[Cloud] 發現 {len(unique_hits)} 則文章。")
 
     task_queue = queue.Queue()
     for item in unique_hits.items(): task_queue.put(item)
-
     captured_filenames = []
     threads = []
-    print(f"[System] 啟動平行下載隊伍 (5核心)...")
-    for i in range(5):
-        t = threading.Thread(target=persistent_worker, args=(task_queue, temp_folder, captured_filenames, session), name=f"Worker-{i}")
+    for _ in range(5):
+        t = threading.Thread(target=persistent_worker, args=(task_queue, temp_folder, captured_filenames, session))
         t.start()
         threads.append(t)
     for t in threads: t.join()
 
-    print(f"[System] 成功擷取 {len(captured_filenames)} 張圖片。")
     if captured_filenames:
         if upload_to_github_assets("temp_images"):
             send_flex_push(captured_filenames)
-    
-    print(f"[System] 雲端任務結束。")
+    print(f"[Cloud] 任務結束。")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print(f"[Main Critical Error] {e}")
-    finally:
-        scan_executor.shutdown(wait=False)
-        print(f"--- 診斷紀錄結束 ---")
+    main()
+    scan_executor.shutdown(wait=False)
