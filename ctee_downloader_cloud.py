@@ -37,8 +37,9 @@ def add_banner_to_raw_image(img_data, keywords_str):
         new_img = Image.new("RGB", (img.width, img.height + banner_h), "white")
         new_img.paste(img, (0, banner_h))
         draw = ImageDraw.Draw(new_img)
+        # 雲端環境使用預設字體，但位置對齊本地版的 (30, 15)
         font = ImageFont.load_default()
-        draw.text((30, 20), f"關鍵字: {keywords_str}", fill="black", font=font)
+        draw.text((30, 15), f"關鍵字: {keywords_str}", fill="black", font=font)
         out_buf = io.BytesIO()
         new_img.save(out_buf, format="JPEG", quality=95)
         return out_buf.getvalue()
@@ -55,8 +56,8 @@ def send_flex_push(img_urls):
     if not LINE_ACCESS_TOKEN or not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
     
-    # 這裡恢復為跟本地版完全一樣：單則訊息、全部塞入
-    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d (Cloud Turbo)"), "weight": "bold", "size": "lg"}]
+    # 1:1 完全對齊本地端的文字與大小設定
+    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d"), "weight": "bold", "size": "lg"}]
     
     for i in range(0, len(img_urls), 2):
         row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
@@ -66,7 +67,7 @@ def send_flex_push(img_urls):
             row["contents"].append({"type": "filler"})
         body_contents.append(row)
             
-    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商快訊 (雲端版)", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
+    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商快訊", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
     requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
 def persistent_worker(task_queue, shared_results, session):
@@ -78,7 +79,6 @@ def persistent_worker(task_queue, shared_results, session):
                 try:
                     aid, hit = task_queue.get_nowait()
                 except queue.Empty: break
-                
                 try:
                     page.goto(hit['url'], wait_until="domcontentloaded", timeout=15000)
                     page.evaluate(f'document.getElementById("{aid}").click()')
@@ -87,7 +87,6 @@ def persistent_worker(task_queue, shared_results, session):
                         img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
                         if img_src and "data:image" not in img_src: break
                         time.sleep(0.3)
-                    
                     if not img_src or "限登入會員使用" in page.content():
                         login_link = page.query_selector(".fancybox-container a:has-text('會員登入')")
                         if login_link:
@@ -97,7 +96,6 @@ def persistent_worker(task_queue, shared_results, session):
                             page.goto(hit['url'], wait_until="domcontentloaded"); page.evaluate(f'document.getElementById("{aid}").click()')
                             time.sleep(1)
                             img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
-
                     if img_src:
                         resp = session.get(img_src, timeout=15)
                         if resp.status_code == 200:
@@ -113,7 +111,6 @@ def persistent_worker(task_queue, shared_results, session):
 def main():
     if not USERNAME or not PASSWORD:
         sys.exit(1)
-    
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
@@ -129,18 +126,14 @@ def main():
         for ck in context.cookies(): session.cookies.set(ck['name'], ck['value'], domain=ck['domain'])
         session.headers.update({"User-Agent": "Mozilla/5.0"})
         browser.close()
-
     def scan_url(url):
         try:
             r = session.get(url, timeout=10)
             matches = re.findall(r'id=[\"\'](\d+)[\"\'].*?data-fulltitle=[\"\'](.*?)[\"\']', r.text, re.DOTALL | re.IGNORECASE)
             return [{"aid": aid, "kw": ",".join(sorted([kw for kw in KEYWORDS if kw in ft])), "url": url} for aid, ft in matches if any(k in ft for k in KEYWORDS)]
         except: return []
-
     scan_results = list(scan_executor.map(scan_url, all_section_urls))
     unique_hits = {h['aid']: h for r in scan_results for h in r}
-    print(f"[Cloud] 發現 {len(unique_hits)} 則文章。")
-
     task_queue = queue.Queue()
     for item in unique_hits.items(): task_queue.put(item)
     shared_results = []
@@ -150,10 +143,8 @@ def main():
         t.start()
         threads.append(t)
     for t in threads: t.join()
-
     if shared_results:
         send_flex_push(shared_results)
-    print(f"[Cloud] 任務結束。")
 
 if __name__ == "__main__":
     main()
