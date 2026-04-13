@@ -108,82 +108,113 @@ def main_logic():
                 page.fill("input#UserName", USERNAME)
                 page.fill("input#Password", PASSWORD)
                 page.click("input[type='submit']")
-                page.wait_for_load_state("networkidle")
+                page.wait_for_load_state("networkidle", timeout=60000)
+                time.sleep(5) # 登入後多等一下讓頁面載入完畢
                 print("登入成功！")
-            except: pass
+            except Exception as e:
+                print(f"登入過程異常: {e}")
 
-        # 2. 掃描
+        # 2. 開始掃描
+        print(f"開始並行掃描今日 ({today_str}) 的 {TARGET_PAPER}...")
         processed_pages = set()
         total_found = 0
         
         while True:
+            # 等待熱點 map 載入
+            try:
+                page.wait_for_selector("area", timeout=15000)
+            except:
+                pass
+            
             page.wait_for_load_state("domcontentloaded")
             current_url = page.url
             if current_url in processed_pages: break
             processed_pages.add(current_url)
 
             # 檢查報紙標題
-            paper_info = "第 " + str(len(processed_pages)) + " 頁"
+            paper_info = ""
             try:
-                info_el = page.query_selector("p.t_align_l")
-                if info_el: paper_info = info_el.inner_text()
-                if TARGET_PAPER not in paper_info: break
-            except: pass
-            
-            print(f"正在檢查: {paper_info}")
+                # 雲端環境可能需要更精確的選擇器
+                info_elements = page.query_selector_all("p.t_align_l")
+                paper_info = " | ".join([el.inner_text() for el in info_elements])
+                
+                if TARGET_PAPER not in paper_info:
+                    print(f"目前為 {paper_info}，非目標報紙，終止。")
+                    # 為了除錯，如果第一頁就不是工商時報，我們紀錄一下
+                    if len(processed_pages) == 1:
+                        print(f"警告：第一頁非目標報紙，請檢查登入後是否被跳轉至正確頁面。")
+                    break
+                print(f"正在檢查: {paper_info}")
+            except Exception as e:
+                print(f"讀取頁面資訊失敗: {e}")
 
-            # 平行掃描
+            # 文章平行檢索
             areas = page.query_selector_all("area")
-            map_links = []
+            map_links = [] 
             for area in areas:
                 href = area.get_attribute("href")
                 if not href: continue
                 mid = (area.evaluate_handle("el => el.closest('map')").as_element().get_attribute("id") or "").replace("map_", "")
-                map_links.append((mid, requests.compat.urljoin(current_url, href)))
+                full_url = requests.compat.urljoin(current_url, href)
+                map_links.append((mid, full_url))
 
-            found_pages = {}
-            with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                futures = {executor.submit(check_article_for_keywords, session, url, KEYWORDS): mid for mid, url in map_links}
-                for f in as_completed(futures):
-                    res = f.result()
-                    if res:
-                        kw, _ = res
-                        mid = futures[f]
-                        if mid not in found_pages: found_pages[mid] = set()
-                        found_pages[mid].add(kw)
+            found_pages = {} 
+            if map_links:
+                with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                    future_to_map = {
+                        executor.submit(check_article_for_keywords, session, url, KEYWORDS): mid 
+                        for mid, url in map_links
+                    }
+                    for future in as_completed(future_to_map):
+                        mid = future_to_map[future]
+                        result = future.result()
+                        if result:
+                            kw, url = result
+                            if mid not in found_pages: found_pages[mid] = set()
+                            found_pages[mid].add(kw)
 
-            # 3. 推送
+            # 3. 下載並傳送至 LINE
             for mid, matches in found_pages.items():
                 try:
                     img_elem = page.query_selector(f'img[usemap="#map_{mid}"]')
                     if img_elem:
                         img_url = img_elem.get_attribute("src")
-                        kw_str = ",".join(sorted(list(matches)))
-                        filename = f"{mid}_{kw_str}.jpg"
-                        
-                        # 下載本地
+                        keyword_str = ",".join(sorted(list(matches)))
+                        filename = f"{mid}_{keyword_str}.jpg"
                         local_path = os.path.join(target_folder, filename)
+                        
+                        # 下載
                         resp = session.get(img_url)
                         with open(local_path, "wb") as f: f.write(resp.content)
                         
-                        # 託管並推播
-                        if LINE_ACCESS_TOKEN and LINE_USER_ID:
+                        if local_path and LINE_ACCESS_TOKEN and LINE_USER_ID:
                             public_url = upload_to_catbox(local_path)
                             if public_url:
-                                msg = f"📄 頁面: {paper_info}\n🔍 發現關鍵字: {kw_str}"
+                                msg = f"📄 頁面: {paper_info}\n🔍 發現關鍵字: {keyword_str}"
                                 send_to_line_messaging_api(LINE_ACCESS_TOKEN, LINE_USER_ID, msg, public_url)
                                 total_found += 1
-                except: pass
+                except:
+                    pass
 
-            # 4. 下一頁
+            # 4. 翻頁
             next_btn = page.query_selector("img.menu-next")
             if next_btn and next_btn.is_visible():
                 next_btn.click()
-                time.sleep(0.5)
-            else: break
+                time.sleep(2) # 雲端翻頁慢一點，確保圖片穩定
+            else:
+                break
 
+        # --- 偵錯功能：如果抓到 0 張，傳送當前畫面截圖到 LINE ---
+        if total_found == 0 and LINE_ACCESS_TOKEN and LINE_USER_ID:
+            debug_shot = os.path.join(target_folder, "debug_failed.png")
+            page.screenshot(path=debug_shot)
+            debug_url = upload_to_catbox(debug_shot)
+            msg = f"⚠️ 除錯通知：今日掃描完成但抓取量為 0。\n目前頁面：{page.url}\n頁面資訊：{paper_info}"
+            send_to_line_messaging_api(LINE_ACCESS_TOKEN, LINE_USER_ID, msg, debug_url)
+
+        final_msg = f"✅ 今日掃描完成，共抓取 {total_found} 張。"
         if LINE_ACCESS_TOKEN and LINE_USER_ID:
-            send_to_line_messaging_api(LINE_ACCESS_TOKEN, LINE_USER_ID, f"✅ 今日掃描完成，共抓取 {total_found} 張。")
+            send_to_line_messaging_api(LINE_ACCESS_TOKEN, LINE_USER_ID, final_msg)
             
         print(f"任務完成！耗時: {round(time.time() - start_time, 2)}s")
         browser.close()
