@@ -3,13 +3,10 @@ import sys
 import time
 import requests
 import re
-import io
-import queue
-import threading
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw, ImageFont, ImageFile
+import io
 
 # 讓 PIL 處理流式內容
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -27,8 +24,6 @@ KEYWORDS = ["凱基", "保險", "壽險", "金控",
     "宏泰人壽", "保誠", "安聯", "法巴", "友邦","保險","壽險","產險","中國人壽"]
 BASE_URL = "https://readers.ctee.com.tw/cm"
 TARGET_PAPER = "工商時報"
-
-scan_executor = ThreadPoolExecutor(max_workers=30)
 
 def add_banner_to_raw_image(img_data, keywords_str):
     try:
@@ -54,100 +49,70 @@ def upload_to_cdn(image_data):
 def send_flex_push(img_urls):
     if not LINE_ACCESS_TOKEN or not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
-    
-    # 對齊本地端的「日期 + 數量」標題格式
     today_date = datetime.now().strftime("%Y/%m/%d")
     final_title = f"{today_date} ({len(img_urls)}則新聞)"
     
     body_contents = [{"type": "text", "text": final_title, "weight": "bold", "size": "lg"}]
-    
     for i in range(0, len(img_urls), 2):
         row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
         if i + 1 < len(img_urls):
             row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
-        else: 
-            row["contents"].append({"type": "filler"})
+        else: row["contents"].append({"type": "filler"})
         body_contents.append(row)
-            
     payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": final_title, "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
     requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
-def persistent_worker(task_queue, shared_results, session):
+def get_logged_session():
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+    res = session.get("https://readers.ctee.com.tw/Reader/Login")
+    token_match = re.search(r'name="__RequestVerificationToken".*?value="(.*?)"', res.text)
+    payload = {"UserName": USERNAME, "Password": PASSWORD, "RememberMe": "true"}
+    if token_match: payload["__RequestVerificationToken"] = token_match.group(1)
+    session.post("https://readers.ctee.com.tw/Reader/Login", data=payload)
+    return session
+
+def download_task(session, hit, shared_results):
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            while not task_queue.empty():
-                try:
-                    aid, hit = task_queue.get_nowait()
-                except queue.Empty: break
-                try:
-                    page.goto(hit['url'], wait_until="domcontentloaded", timeout=15000)
-                    page.evaluate(f'document.getElementById("{aid}").click()')
-                    img_src = None
-                    for _ in range(15):
-                        img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
-                        if img_src and "data:image" not in img_src: break
-                        time.sleep(0.3)
-                    if not img_src or "限登入會員使用" in page.content():
-                        login_link = page.query_selector(".fancybox-container a:has-text('會員登入')")
-                        if login_link:
-                            login_link.click()
-                            page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
-                            page.wait_for_load_state("networkidle")
-                            page.goto(hit['url'], wait_until="domcontentloaded"); page.evaluate(f'document.getElementById("{aid}").click()')
-                            time.sleep(1)
-                            img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
-                    if img_src:
-                        resp = session.get(img_src, timeout=15)
-                        if resp.status_code == 200:
-                            final_data = add_banner_to_raw_image(resp.content, hit['kw'])
-                            u_url = upload_to_cdn(final_data)
-                            if u_url: shared_results.append(u_url)
-                    page.keyboard.press("Escape")
-                except: pass
-                finally: task_queue.task_done()
-            browser.close()
+        aid = hit['aid']
+        paper_date = datetime.now().strftime("%Y%m%d")
+        image_api_url = f"https://readers.ctee.com.tw/Reader/GetImage?id={aid}&paper={TARGET_PAPER}&date={paper_date}&type=1"
+        img_res = session.get(image_api_url, timeout=20)
+        if img_res.status_code == 200 and len(img_res.content) > 10000:
+            final_data = add_banner_to_raw_image(img_res.content, hit['kw'])
+            u_url = upload_to_cdn(final_data)
+            if u_url: shared_results.append(u_url)
     except: pass
 
 def main():
-    if not USERNAME or not PASSWORD:
-        sys.exit(1)
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.goto("https://readers.ctee.com.tw/Reader/Login")
-        if page.query_selector("input#UserName"):
-            page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
-            page.wait_for_load_state("networkidle")
-        page.goto(BASE_URL)
-        links = sorted(list(set(re.findall(r'/cm/\d+/[a-z0-9]+', page.content()))))
-        all_section_urls = [f"https://readers.ctee.com.tw{l}" for l in links if any(k in l for k in ["aa", "ab", "ac", "asa"])]
-        session = requests.Session()
-        for ck in context.cookies(): session.cookies.set(ck['name'], ck['value'], domain=ck['domain'])
-        session.headers.update({"User-Agent": "Mozilla/5.0"})
-        browser.close()
+    if not USERNAME or not PASSWORD: return
+    session = get_logged_session()
+    
+    # 掃描
+    res = session.get(BASE_URL)
+    links = sorted(list(set(re.findall(r'/cm/\d+/[a-z0-9]+', res.text))))
+    all_section_urls = [f"https://readers.ctee.com.tw{l}" for l in links if any(k in l for k in ["aa", "ab", "ac", "asa"])]
+    
     def scan_url(url):
         try:
             r = session.get(url, timeout=10)
             matches = re.findall(r'id=[\"\'](\d+)[\"\'].*?data-fulltitle=[\"\'](.*?)[\"\']', r.text, re.DOTALL | re.IGNORECASE)
             return [{"aid": aid, "kw": ",".join(sorted([kw for kw in KEYWORDS if kw in ft])), "url": url} for aid, ft in matches if any(k in ft for k in KEYWORDS)]
         except: return []
-    scan_results = list(scan_executor.map(scan_url, all_section_urls))
+
+    with ThreadPoolExecutor(max_workers=30) as scan_pool:
+        scan_results = list(scan_pool.map(scan_url, all_section_urls))
     unique_hits = {h['aid']: h for r in scan_results for h in r}
-    task_queue = queue.Queue()
-    for item in unique_hits.items(): task_queue.put(item)
+    
+    # 併發下載
     shared_results = []
-    threads = []
-    for _ in range(5):
-        t = threading.Thread(target=persistent_worker, args=(task_queue, shared_results, session))
-        t.start()
-        threads.append(t)
-    for t in threads: t.join()
+    with ThreadPoolExecutor(max_workers=50) as download_pool:
+        for hit in unique_hits.values():
+            download_pool.submit(download_task, session, hit, shared_results)
+
+    # 推播
     if shared_results:
         send_flex_push(shared_results)
 
 if __name__ == "__main__":
     main()
-    scan_executor.shutdown(wait=False)
