@@ -59,41 +59,35 @@ def upload_to_cdn(image_data):
 def send_flex_push(img_urls):
     if not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
-    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d"), "weight": "bold", "size": "lg"}]
+    today_date = datetime.now().strftime("%Y/%m/%d")
+    body_contents = [{"type": "text", "text": today_date, "weight": "bold", "size": "lg"}]
     for i in range(0, len(img_urls), 2):
         row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
         if i + 1 < len(img_urls):
             row["contents"].append({"type": "image", "url": img_urls[i+1], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i+1]}})
         else: row["contents"].append({"type": "filler"})
         body_contents.append(row)
-    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商快訊", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
+    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": today_date, "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
     requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
 def persistent_worker(task_queue, target_folder, shared_results, session):
-    """長駐型消費者：啟動一次瀏覽器，處理多個任務"""
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context(viewport={'width': 1280, 'height': 850}, device_scale_factor=2)
             page = context.new_page()
-            
             while not task_queue.empty():
                 try:
                     aid, hit = task_queue.get_nowait()
-                except queue.Empty:
-                    break
-                
+                except queue.Empty: break
                 try:
                     page.goto(hit['url'], wait_until="domcontentloaded", timeout=15000)
                     page.evaluate(f'document.getElementById("{aid}").click()')
-                    page.wait_for_selector(".fancybox-container.fancybox-is-open", timeout=8000)
-                    
                     img_src = None
-                    for _ in range(25):
-                        img_src = page.evaluate('() => { const img = document.querySelector(".fancybox-image"); return img ? img.src : null; }')
+                    for _ in range(15):
+                        img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
                         if img_src and "data:image" not in img_src: break
-                        time.sleep(0.2)
-                    
+                        time.sleep(0.3)
                     if not img_src or "限登入會員使用" in page.content():
                         login_link = page.query_selector(".fancybox-container a:has-text('會員登入')")
                         if login_link:
@@ -103,33 +97,24 @@ def persistent_worker(task_queue, target_folder, shared_results, session):
                             page.goto(hit['url'], wait_until="domcontentloaded"); page.evaluate(f'document.getElementById("{aid}").click()')
                             time.sleep(1)
                             img_src = page.evaluate('() => document.querySelector(".fancybox-image") ? document.querySelector(".fancybox-image").src : null')
-
                     if img_src:
                         resp = session.get(img_src, timeout=15)
                         if resp.status_code == 200:
                             final_data = add_banner_to_raw_image(resp.content, hit['kw'])
                             local_path = os.path.join(target_folder, f"{aid}_{hit['kw']}.jpg")
                             with open(local_path, "wb") as f: f.write(final_data)
-                            print(f"    √ 下載完成: {aid}")
                             u_url = upload_to_cdn(final_data)
                             if u_url: shared_results.append(u_url)
-                    page.keyboard.press("Escape") # 關閉彈窗準備下一則
-                except Exception as e:
-                    print(f"    [!] 處理 {aid} 失敗: {e}")
-                finally:
-                    task_queue.task_done()
+                    page.keyboard.press("Escape")
+                except: pass
+                finally: task_queue.task_done()
             browser.close()
-    except Exception as e:
-        print(f"[Worker] 核心崩潰: {e}")
+    except: pass
 
 def main_worker():
-    print("--- 腳本啟動 (長駐分頁 pool 模式) ---")
-    start_time = time.time()
     today_str = datetime.now().strftime("%Y%m%d")
     target_folder = os.path.join(get_desktop_path(), f"{TARGET_PAPER}_{today_str}")
     if not os.path.exists(target_folder): os.makedirs(target_folder)
-
-    # 1. 初始掃描 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
@@ -138,45 +123,31 @@ def main_worker():
         if page.query_selector("input#UserName"):
             page.fill("input#UserName", USERNAME); page.fill("input#Password", PASSWORD); page.click("input[type='submit']")
             page.wait_for_load_state("networkidle")
-        
         page.goto(BASE_URL)
         links = sorted(list(set(re.findall(r'/cm/\d+/[a-z0-9]+', page.content()))))
         all_section_urls = [f"https://readers.ctee.com.tw{l}" for l in links if any(k in l for k in ["aa", "ab", "ac", "asa"])]
-        
         session = requests.Session()
         for ck in context.cookies(): session.cookies.set(ck['name'], ck['value'], domain=ck['domain'])
         session.headers.update({"User-Agent": "Mozilla/5.0"})
         browser.close()
-
     def scan_url(url):
         try:
             r = session.get(url, timeout=10)
             matches = re.findall(r'id=[\"\'](\d+)[\"\'].*?data-fulltitle=[\"\'](.*?)[\"\']', r.text, re.DOTALL | re.IGNORECASE)
             return [{"aid": aid, "kw": ",".join(sorted([kw for kw in KEYWORDS if kw in ft])), "url": url} for aid, ft in matches if any(k in ft for k in KEYWORDS)]
         except: return []
-
-    print(f"[1/2] 正在檢索全報內容...")
     scan_results = list(scan_executor.map(scan_url, all_section_urls))
     unique_hits = {h['aid']: h for r in scan_results for h in r}
-    print(f"發現 {len(unique_hits)} 則中標新聞。啟動 5 分頁長駐並行...")
-
-    # 2. 啟動任務隊列與消費者
     task_queue = queue.Queue()
-    for item in unique_hits.items():
-        task_queue.put(item)
-
+    for item in unique_hits.items(): task_queue.put(item)
     shared_results = []
     threads = []
     for _ in range(5):
         t = threading.Thread(target=persistent_worker, args=(task_queue, target_folder, shared_results, session))
         t.start()
         threads.append(t)
-
-    for t in threads:
-        t.join()
-
+    for t in threads: t.join()
     if shared_results: send_flex_push(shared_results)
-    print(f"全任務結束！總耗時: {round(time.time() - start_time, 2)}s")
     scan_executor.shutdown(wait=False)
 
 def start_main():

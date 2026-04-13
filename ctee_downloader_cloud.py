@@ -37,7 +37,6 @@ def add_banner_to_raw_image(img_data, keywords_str):
         new_img = Image.new("RGB", (img.width, img.height + banner_h), "white")
         new_img.paste(img, (0, banner_h))
         draw = ImageDraw.Draw(new_img)
-        # 雲端環境使用預設字體，但位置對齊本地版的 (30, 15)
         font = ImageFont.load_default()
         draw.text((30, 15), f"關鍵字: {keywords_str}", fill="black", font=font)
         out_buf = io.BytesIO()
@@ -56,8 +55,9 @@ def send_flex_push(img_urls):
     if not LINE_ACCESS_TOKEN or not img_urls: return
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"}
     
-    # 1:1 完全對齊本地端的文字與大小設定
-    body_contents = [{"type": "text", "text": datetime.now().strftime("%Y/%m/%d"), "weight": "bold", "size": "lg"}]
+    # 改為純日期
+    today_date = datetime.now().strftime("%Y/%m/%d")
+    body_contents = [{"type": "text", "text": today_date, "weight": "bold", "size": "lg"}]
     
     for i in range(0, len(img_urls), 2):
         row = {"type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md", "contents": [{"type": "image", "url": img_urls[i], "size": "full", "aspectRatio": "1:1", "action": {"type": "uri", "uri": img_urls[i]}}]}
@@ -67,7 +67,8 @@ def send_flex_push(img_urls):
             row["contents"].append({"type": "filler"})
         body_contents.append(row)
             
-    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "📸 工商快訊", "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
+    # altText 也改為純日期
+    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": today_date, "contents": {"type": "bubble", "size": "mega", "body": {"type": "box", "layout": "vertical", "contents": body_contents}}}]}
     requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=payload)
 
 def persistent_worker(task_queue, shared_results, session):
