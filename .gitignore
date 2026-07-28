@@ -1,0 +1,6 @@
+.env
+ctee_downloader_local.py
+test_image_hosts.py
+__pycache__/
+*.pyc
+.pytest_cache/
