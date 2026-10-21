@@ -2,8 +2,8 @@ name: Keep Repository Active
 
 on:
   schedule:
-    # Every Monday 03:17 UTC (11:17 Taiwan time).
-    - cron: '17 3 * * 1'
+    # On the 1st of each month at 03:17 UTC (11:17 Taiwan time).
+    - cron: '17 3 1 * *'
   workflow_dispatch:
 
 permissions:
