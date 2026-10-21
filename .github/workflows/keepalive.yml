@@ -1,0 +1,37 @@
+name: Keep Repository Active
+
+on:
+  schedule:
+    # Every Monday 03:17 UTC (11:17 Taiwan time).
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Create empty commit only after 30 days without commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          now=$(date -u +%s)
+          last=$(git log -1 --format=%ct)
+          age_days=$(( (now - last) / 86400 ))
+          echo "Last commit age: ${age_days} days"
+          if (( age_days < 30 )); then
+            echo "Repository has recent commits; nothing to do."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keep scheduled workflows active"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
