@@ -54,7 +54,7 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 <header><div class="head"><a href="./" class="brand">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a><button type="button" class="ghost" id="adminEntry">管理者專區</button></div></div></header>
 <main>
 <h1>調整追蹤關鍵字</h1>
-<p class="subtitle">追蹤清單直接來自 GitHub 的 keywords.txt。新增、刪除建議會建立 GitHub Issue，管理員審核後直接修改 GitHub 清單。</p>
+<p class="subtitle">追蹤清單來自 GitHub 的 keywords.txt。新增、刪除申請與管理審核都在本網站操作，每一個字詞分開審核。</p>
 <section class="panel">
 <div class="topline"><div class="titlewrap"><span class="iconbox blue">＋</span><div><h2>新增關鍵字</h2><p class="help">一列一個詞彙；不需要的欄位可直接刪掉</p></div></div></div>
 <div id="addRows"></div>
@@ -66,13 +66,13 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 <div id="keywordChips" class="chips" aria-live="polite"></div>
 </section>
 <form id="suggestionForm" class="panel">
-<div class="topline"><div><h2>送出關鍵字申請</h2><p class="help">系統會帶入你選擇的字詞，前往 GitHub 送出審核申請。</p></div></div>
+<div class="topline"><div><h2>送出關鍵字申請</h2><p class="help">在本頁送出，一次可提出多個新增、刪除項目，每個項目由管理者獨立審核。</p></div></div>
 <label for="requester">你的姓名</label><input id="requester" type="text" maxlength="40" required placeholder="請輸入姓名">
 <label for="reason">建議原因（選填）</label><textarea id="reason" maxlength="500" placeholder="例如：希望追蹤新的保險商品新聞"></textarea>
 <div class="summary" id="summary">請先新增或選擇要刪除的關鍵字。</div>
 <div id="status" role="status"></div>
-<button type="submit" class="btn blue full submit" style="margin-top:14px">前往 GitHub 送出申請</button>
-<p class="tip">GitHub 不允許匿名訪客直接寫入儲存庫，因此送出申請需要登入 GitHub。網頁不會儲存 GitHub Token，也不使用 Supabase 或其他資料庫。</p>
+<button type="submit" id="submitSuggestion" class="btn blue full submit" style="margin-top:14px">送出關鍵字建議</button>
+<p class="tip">不需要 GitHub 帳號，也不會跳到 GitHub。只有成功寫入網站收件服務後，才會顯示「送出成功」。</p>
 </form>
 <section id="adminPanel" class="panel hidden">
 <div class="topline"><div><h2>關鍵字調整申請</h2><p class="help">每個新增、刪除關鍵字都可單獨核准或駁回，核准後寫入 GitHub keywords.txt。</p></div><button type="button" class="btn gray" id="adminClose">關閉</button></div>
@@ -90,15 +90,14 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 <div id="adminNotice" role="status" aria-live="polite"></div>
 </section>
 <section class="panel">
-<div class="topline"><div><h2>已送出的申請</h2><p class="help">申請與核准紀錄保留在 GitHub Issues；無需登入即可查閱公開內容。</p></div><a class="btn gray" href="https://github.com/hub-google/ctee-line-bot/issues" target="_blank" rel="noopener noreferrer">查看全部</a></div>
+<div class="topline"><div><h2>已送出的申請</h2><p class="help">申請狀態顯示在網站內，無需前往 GitHub。</p></div></div>
 <div id="issueList" class="chips"><span class="tip">讀取 GitHub 紀錄中…</span></div>
-<p class="tip">管理者可在 Issue 留言 <code>/approve</code> 或 <code>/reject</code>，由 GitHub Actions 驗證權限並更新 keywords.txt。</p>
+<p class="tip">每個新增或刪除關鍵字各自審核，只有核准的項目會更新 keywords.txt。</p>
 </section>
 <p class="footer">工商時報新聞追蹤｜GitHub 單一資料來源</p>
 </main>
 <script type="module">
 const REPO="hub-google/ctee-line-bot";
-const ROOT="https://github.com/"+REPO;
 const q=s=>document.querySelector(s);
 const words=[];
 const selected=new Set();
@@ -140,18 +139,43 @@ async function loadWords(){
 }
 q("#addRowButton").onclick=()=>newRow().focus();
 q("#wordSearch").addEventListener("input",renderWords);
-q("#suggestionForm").addEventListener("submit",e=>{
+
+const SUGGESTION_GATEWAY=String(window.CTEE_KEYWORD_API_URL||"").trim();
+q("#suggestionForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const add=added(),remove=[...selected],name=q("#requester").value.trim(),reason=q("#reason").value.trim();
-  if(!name||!add.length&&!remove.length){q("#status").replaceChildren(node("div","alert error","請填姓名，並至少選擇一個關鍵字變更。"));return;}
-  if(add.length+remove.length>20){q("#status").replaceChildren(node("div","alert error","一次最多變更 20 個關鍵字。"));return;}
-  if(add.some(x=>words.includes(x))||add.some(x=>remove.includes(x))){q("#status").replaceChildren(node("div","alert error","新增項目不能與現有或刪除項目重複。"));return;}
-  const list=x=>x.length?x.map(w=>"- "+w).join("\n"):"（無）";
-  const body="## 申請人\n"+name+"\n\n## 新增關鍵字\n"+list(add)+"\n\n## 移除關鍵字\n"+list(remove)+"\n\n## 建議原因\n"+(reason||"（無）")+"\n";
-  const url=new URL(ROOT+"/issues/new");
-  url.searchParams.set("title","[關鍵字申請] "+name+"（新增 "+add.length+"、移除 "+remove.length+"）");
-  url.searchParams.set("body",body);
-  location.assign(url.toString());
+  const status=q("#status"),submit=q("#submitSuggestion");
+  status.replaceChildren();
+  const fail=text=>status.replaceChildren(node("div","alert error",text));
+  if(!name||!add.length&&!remove.length){fail("請填姓名，並至少選擇一個關鍵字變更。");return}
+  if(add.length+remove.length>20){fail("一次最多變更 20 個關鍵字。");return}
+  if(add.some(x=>words.includes(x))||add.some(x=>remove.includes(x))){fail("新增項目不能與現有或刪除項目重複。");return}
+  if([...add,...remove].some(x=>x.length>40||/[\r\n<>]/.test(x))){fail("關鍵字長度不能超過 40 字，且不可包含特殊換行符號。");return}
+  if(!SUGGESTION_GATEWAY){
+    fail("網站匿名收件後端尚未設定，這筆申請未送出。必須先部署安全的 GitHub 寫入代理，不能讓公開網頁直接持有 GitHub Token。");
+    return;
+  }
+  submit.disabled=true;
+  const items=[
+    ...add.map(keyword=>({operation:"add",keyword})),
+    ...remove.map(keyword=>({operation:"remove",keyword}))
+  ];
+  try{
+    const resp=await fetch(SUGGESTION_GATEWAY,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"submit",name,reason,items}),
+      cache:"no-store"
+    });
+    const result=await resp.json().catch(()=>null);
+    if(!resp.ok||!result||result.ok!==true)throw Error(result?.error||"伺服器未確認收件");
+    status.append(node("div","alert success","已成功送出 "+items.length+" 個待審核項目。每個關鍵字都會個別審核。"));
+    q("#requester").value="";q("#reason").value="";
+    q("#addRows").replaceChildren();newRow();selected.clear();renderWords();
+    await loadIssues();
+  }catch(err){
+    fail("申請沒有確認成功："+(err?.message||String(err))+"。請確認後再送，避免重複。");
+  }finally{submit.disabled=false}
 });
 async function loadIssues(){
   try{
