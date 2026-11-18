@@ -56,7 +56,7 @@
     <div class="tabs" role="group" aria-label="閱讀模式"><button id="flowBtn" type="button" class="active" aria-pressed="true">連續閱讀</button><button id="gridBtn" type="button" aria-pressed="false">縮圖總覽</button></div>
     <div class="actions"><button id="openBtn" type="button" class="btn primary">全螢幕放大</button><a id="zipBtn" class="btn" href="latest.zip" download>下載全部 ZIP</a></div>
   </div>
-  <p class="hint">連續閱讀與全螢幕顯示的都是來源原圖（不重新壓縮）；雙指縮放、拖曳細看、左右換篇。只有縮圖總覽使用低解析預覽。</p>
+  <p class="hint">只保存一份來源原圖。連續閱讀與縮圖總覽都使用同一張原圖（以瀏覽器縮放顯示），可雙指放大、拖曳細看、左右換篇。</p>
   <div id="gallery" class="gallery flow"><div class="status">正在取得剪報，請稍候…</div></div>
   <div class="footer">獨立剪報閱讀器，不影響原本 LINE 每日推播與 Rentry。<br>新聞影像的可辨識細節仍受原始來源解析度限制。</div>
 </main>
@@ -74,7 +74,7 @@ function setMode(newMode){
   flowBtn.classList.toggle('active',mode==='flow');gridBtn.classList.toggle('active',mode==='grid');
   flowBtn.setAttribute('aria-pressed',String(mode==='flow'));gridBtn.setAttribute('aria-pressed',String(mode==='grid'));
   for(const img of gallery.querySelectorAll('img[data-full]')){
-    const next=mode==='flow'?img.dataset.full:img.dataset.thumb;
+    const next=img.dataset.full;
     if(img.getAttribute('src')!==next)img.src=next;
   }
   try{localStorage.setItem('ctee-viewer-mode',mode)}catch(e){}
@@ -95,8 +95,8 @@ function render(){
     const card=el('article','item');
     const btn=el('button','image-btn');btn.type='button';btn.setAttribute('aria-label','放大第 '+(i+1)+' 張剪報');
     const img=el('img');img.className='clipping-image';
-    img.dataset.full=item.src;img.dataset.thumb=item.thumb||item.src;
-    img.src=mode==='flow'?img.dataset.full:img.dataset.thumb;
+    img.dataset.full=item.src;
+    img.src=item.src;
     img.alt='第 '+(i+1)+' 張剪報：'+(item.keyword||'');img.loading=i<2?'eager':'lazy';img.decoding='async';
     btn.append(img);btn.addEventListener('click',()=>openGallery(i));
     const meta=el('div','meta');
