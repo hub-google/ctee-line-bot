@@ -74,7 +74,7 @@ const liffId=String(window.CTEE_LIFF_ID||'').trim();
 const shareButton=document.querySelector('#showShareBtn');
 const readerUrl=()=>location.origin+location.pathname+'?date='+encodeURIComponent(displayedDate);
 const shareUrl=()=>liffId?'https://liff.line.me/'+encodeURIComponent(liffId)+'?date='+encodeURIComponent(displayedDate):readerUrl();
-const nativeShareUrl=()=> 'https://line.me/R/share?text='+encodeURIComponent('工商時報｜'+displayedDate.replaceAll('-','/')+' 每日剪報\\n'+shareUrl());
+const nativeShareUrl=()=> 'https://line.me/R/share?text='+encodeURIComponent('工商時報｜'+displayedDate.replaceAll('-','/')+' 每日剪報\n'+shareUrl());
 let liffInitPromise=null;
 function ensureLiff(){
   if(!liffId||!window.liff)return Promise.reject(new Error('LIFF not configured'));
