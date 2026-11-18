@@ -161,7 +161,7 @@ function downloadAllClippings(){
   // Chrome/Safari/desktop: direct user-initiated same-origin file download.
   const link=document.createElement('a');
   link.href=zipUrl.href;
-  link.download=displayedDate.replaceAll('-','')+'_工商時報剪報.zip';
+  link.download='工商時報_'+displayedDate.replaceAll('-','')+'.zip';
   document.body.append(link);
   link.click();
   link.remove();
@@ -225,7 +225,7 @@ try{
   document.querySelector('#headline').textContent=(data.date_label||data.date)+' 工商時報剪報';
   document.querySelector('#subtitle').textContent='收錄 '+images.length+' 張 · 原始畫質 · 歷史日期可切換';
   document.querySelector('#countBadge').textContent=images.length+' 張原圖';
-  const zip=data.zip||'latest.zip';
+  const zip=data.zip||'archive/'+displayedDate+'/工商時報_'+displayedDate.replaceAll('-','')+'.zip';
   zipDownloadUrl=new URL(zip,location.href).href;
   zipButton.disabled=false;
   render();setMode(mode);
