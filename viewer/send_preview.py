@@ -72,7 +72,7 @@ else:
 zip_url = urljoin(site, data["zip"])
 share_text = f"工商時報每日剪報｜{date_label}\n{count} 則相關新聞\n{reader_url}"
 share_link = "https://line.me/R/msg/text/?" + quote(share_text, safe="")
-keyword_url = "https://github.com/hub-google/ctee-line-bot/edit/master/keywords.txt"
+keyword_url = "https://hub-google.github.io/ctee-line-bot/keywords.html"
 
 message = {
     "type": "flex",
@@ -100,13 +100,11 @@ message = {
         "footer": {
             "type": "box", "layout": "vertical", "spacing": "sm",
             "contents": [
-                {"type": "button", "style": "primary", "color": "#176B57",
+                {"type": "button", "style": "primary", "height": "sm", "color": "#176B57",
                  "action": {"type": "uri", "label": "開啟每日剪報", "uri": reader_url}},
-                {"type": "button", "style": "secondary",
-                 "action": {"type": "uri", "label": "開啟原圖下載區", "uri": normal_url}},
-                {"type": "button", "style": "secondary",
+                {"type": "button", "style": "primary", "height": "sm", "color": "#286BA6",
                  "action": {"type": "uri", "label": "分享新聞給好友", "uri": share_link}},
-                {"type": "button", "style": "link",
+                {"type": "button", "style": "primary", "height": "sm", "color": "#7156A4",
                  "action": {"type": "uri", "label": "調整追蹤關鍵字", "uri": keyword_url}}
             ]
         }
