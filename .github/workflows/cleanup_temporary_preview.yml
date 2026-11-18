@@ -1,0 +1,19 @@
+name: Remove Temporary Cloudflare Preview Branch
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/cleanup_temporary_preview.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove temporary branch created only for unrequested Cloudflare preview
+        run: |
+          git push origin --delete viewer-preview
