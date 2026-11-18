@@ -23,21 +23,8 @@ LINE_USER_ID = os.getenv("LINE_USER_ID")
 
 KEYWORDS_URL = "https://raw.githubusercontent.com/hub-google/ctee-line-bot/master/keywords.txt"
 KEYWORDS_EDIT_URL = "https://hub-google.github.io/ctee-line-bot/keywords.html"
-KEYWORDS_API_URL = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords?action=keywords"
-
 def load_keywords():
-    """優先讀取管理員核准的關鍵字；服務中斷則回退 GitHub 與本地清單。"""
-    try:
-        response = requests.get(KEYWORDS_API_URL, timeout=8)
-        response.raise_for_status()
-        keywords = response.json().get("keywords", [])
-        if isinstance(keywords, list):
-            keywords = [str(k).strip() for k in keywords if isinstance(k, str) and k.strip()]
-            if keywords:
-                print(f"[關鍵字] 已載入 {len(keywords)} 個核准追蹤詞。")
-                return keywords
-    except Exception as exc:
-        print(f"[關鍵字] 管理平台讀取失敗 ({exc})，回退 GitHub 清單。")
+    """Only use the GitHub keywords.txt file; local checkout is a fallback."""
     try:
         r = requests.get(KEYWORDS_URL, timeout=8)
         if r.status_code == 200:
