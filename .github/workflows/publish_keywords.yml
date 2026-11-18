@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - viewer/public/keywords.html
-      - keywords.txt
+      - supabase/functions/ctee-keywords/index.ts
       - viewer/send_preview.py
       - .github/workflows/daily_ctee.yml
       - ctee_downloader_cloud.py
@@ -42,24 +42,27 @@ jobs:
           Path("/tmp/ctee-keywords.mjs").write_text(code, encoding="utf-8")
           PY
           node --check /tmp/ctee-keywords.mjs
-      - name: Verify GitHub keyword reader without external service
+      - name: Verify Supabase-only frontend and crawler, and live read API
         run: |
           python - <<'PY'
           from pathlib import Path
-          page = Path("viewer/public/keywords.html").read_text(encoding="utf-8")
-          crawler = Path("ctee_downloader_cloud.py").read_text(encoding="utf-8")
-          assert "raw.githubusercontent.com" in page
-          assert "ctee-keywords-inbox" not in page
-          assert "supabase.co" not in page + crawler
-          assert "KEYWORDS_API_URL" not in crawler
-          assert "setInterval(" not in page
-          assert "api.github.com/repos/" in page
-          assert '"/contents/keywords.txt","PUT"' in page
-          assert "reviewQueue" in page and "applyReview(item)" in page
-          assert "ctee-keywords-inbox" not in page
-          assert "supabase.co" not in page
-          assert "GITHUB_WRITE_TOKEN" not in page
-          print("GitHub-only keyword reader validated")
+          import json
+          import urllib.request
+          page = Path('viewer/public/keywords.html').read_text(encoding='utf-8')
+          crawler = Path('ctee_downloader_cloud.py').read_text(encoding='utf-8')
+          endpoint = 'https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords'
+          assert endpoint in page and endpoint in crawler
+          assert 'api.github.com/repos/' not in page
+          assert 'setInterval(' not in page
+          assert 'keywords.txt' not in crawler
+          req = urllib.request.Request(endpoint, headers={'Origin':'https://hub-google.github.io'})
+          with urllib.request.urlopen(req, timeout=20) as response:
+              result = json.load(response)
+              assert response.headers.get('Access-Control-Allow-Origin') == 'https://hub-google.github.io'
+          assert result.get('ok') is True and isinstance(result.get('keywords'),list)
+          assert len(result['keywords']) > 0
+          assert all(isinstance(word,str) and word.strip() for word in result['keywords'])
+          print('Supabase API available: %d keywords' % len(result['keywords']))
           PY
       - name: Update persistent gallery with keyword page
         run: |
