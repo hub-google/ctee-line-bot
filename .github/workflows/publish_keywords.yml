@@ -8,6 +8,7 @@ on:
       - viewer/send_preview.py
       - .github/workflows/daily_ctee.yml
       - ctee_downloader_cloud.py
+      - .github/workflows/publish_keywords.yml
   workflow_dispatch:
 
 permissions:
@@ -29,6 +30,28 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Validate LINE Python and keyword page JavaScript
+        run: |
+          python -m py_compile viewer/send_preview.py ctee_downloader_cloud.py
+          python - <<'PY'
+          from pathlib import Path
+          html = Path("viewer/public/keywords.html").read_text(encoding="utf-8")
+          assert "<script type=\"module\">" in html and "</script>" in html
+          code = html.split('<script type="module">', 1)[1].split("</script>", 1)[0]
+          Path("/tmp/ctee-keywords.mjs").write_text(code, encoding="utf-8")
+          PY
+          node --check /tmp/ctee-keywords.mjs
+      - name: Smoke test public keyword API
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          endpoint = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords?action=keywords"
+          with urllib.request.urlopen(endpoint, timeout=20) as resp:
+              content = json.load(resp)
+          assert len(content.get("keywords", [])) >= 1, content
+          assert isinstance(content.get("revision"), int), content
+          print("Keyword API passed:", len(content["keywords"]), "entries")
+          PY
       - name: Update persistent gallery with keyword page
         run: |
           git config user.name 'github-actions[bot]'
