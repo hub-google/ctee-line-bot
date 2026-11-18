@@ -1,28 +1,30 @@
-# 工商時報獨立剪報閱讀器
+# 工商時報每日高畫質剪報｜正式版
 
-此新方案不改動原本 Rentry 與 LINE 正式每日推播。舊版 daily_ctee.yml 及 ctee_downloader_cloud.py 仍可獨立執行。
+## 運作流程
 
-## 閱讀與畫質
+唯一的每日排程：.github/workflows/daily_ctee.yml → 每日台灣時間 06:00 的 GitHub Actions（可能延遲）→ 爬蟲擷取原圖 → 追加至 viewer-archive 日期資料夾 → 更新 GitHub Pages → 驗證發布的原圖及 ZIP → 推送一張 LINE Flex 剪報卡片。
 
-- 手機連續閱讀、縮圖總覽、PhotoSwipe 雙指縮放、左右滑動切換、單張下載、整日 ZIP。
-- 新版只在本次獨立程序中攔截爬蟲下載的原始 bytes，寫入原圖；不追加原本的 JPEG 橫幅、不二次有損壓縮、不透過外部圖床再下載。
-- 連續閱讀與放大使用來源原圖；低解析縮圖只用於縮圖模式。網站來源本身若畫質不足，無法無損增加不存在的細節。
+原本 Rentry/ImgBB/Catbox 版本已存放在 legacy/2026-11-18/（原始 Git blob SHA 完全保留）。舊版排程已由新版取代，無第二套每日訊息。正式版仍匯入舊版爬蟲作為來源掃描引擎，但攔截圖片保存與訊息發送，只使用新版流程。
 
-## 每日保留歷史
+## 畫質與歷史
 
-- 日期資料位於 viewer-archive 分支的 viewer/public/archive/YYYY-MM-DD 目錄。
-- GitHub Actions 每次只更新當日目錄，不刪除其他日期。頁首可選歷史日期，網址可附 ?date=YYYY-MM-DD。
-- 新版每日定時流程只更新歷史，不額外發 LINE；手動執行才發送新版卡片，保留舊版每日推播。
+- 來源下載的圖片原始 bytes 直接保存，不重編碼；連續閱讀與全螢幕縮放使用原圖，只有縮圖總覽使用縮圖。
+- 所有日期儲存在 viewer-archive 分支的 viewer/public/archive/YYYY-MM-DD/，提供各日資料、原圖及 ZIP，過去日期不因新日期出現而刪除。
+- 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
+- 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
-## LINE Flex 與 LIFF
+## LINE
 
-- 使用接近舊版正式排版的 LINE Flex 訊息。卡片含開啟剪報、下載 ZIP、分享、調整關鍵字。
-- 如果 GitHub Secrets 設有已註冊且 Endpoint 對應本站的 LIFF_ID，卡片開啟 https://liff.line.me/LIFF_ID；否則使用 LINE 內建瀏覽器開啟 GitHub Pages。
-- Flex 是聊天訊息樣式，LIFF 是在 LINE Developers 登錄的網頁應用入口，兩者不同。
+- 正式每日推播使用 LINE Flex，包含閱讀、下載、分享、調整關鍵字。
+- 如有對應已註冊的 LIFF_ID GitHub Secret，卡片可開啟 LIFF；未設定時使用 LINE 內建瀏覽器連結，不能誤稱已是 LIFF。
+- LINE_VALIDATE_ONLY=1 可呼叫官方 validate/push API 驗證卡片而不實際傳送；正式每日任務為實際 Push。
+- 手動執行 workflow_dispatch 會照常推播，可能重複傳送當天的訊息，請只在必要時使用。
 
-## 容量與授權
+## 備份
 
-- GitHub Pages 約有 1 GB 網站容量限制。本專案不會自動清掉舊檔；接近 900 MiB 時停止發布並保留先前資料，後續需規劃更長期儲存。
-- GitHub Pages 是公開網站，robots.txt 與 noindex 不能防止他人讀取；需確認付費剪報的保存與公開託管符合新聞來源授權。
+- 原版完整備份：legacy/2026-11-18/，包含爬蟲、字型、關鍵字、套件與原始排程。
+- 原有 Secrets 仍由 GitHub Actions 管理，沒有存放在備份裡。
 
-操作入口：https://hub-google.github.io/ctee-line-bot/
+## 內容權限
+
+GitHub Pages 與公開 Git 倉庫的新聞圖片不具私密存取控制。請先確保這些新聞剪報的保存、散布、公開託管符合內容來源授權條款。
