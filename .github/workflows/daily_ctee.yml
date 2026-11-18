@@ -1,6 +1,10 @@
 name: Daily CTEE Scan to LINE
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/daily_ctee.yml'
   schedule:
     # 每天早上台灣時間 06:00 (UTC 22:00 前一天)
     - cron: '0 22 * * *'
