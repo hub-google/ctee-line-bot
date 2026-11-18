@@ -2,6 +2,10 @@ name: Resend published CTEE LINE Flex
 
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/resend_ctee_line.yml
 
 permissions:
   contents: read
