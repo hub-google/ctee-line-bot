@@ -1,5 +1,5 @@
 {
-  "build_ref": "43a460a3e007076d507fab67545b127d712a1459",
+  "build_ref": "8a3aed09c862c4cfff42603293f0216990d888ad",
   "date_label": "2026/11/18",
   "date": "2026-11-18",
   "total": 14,
@@ -11,7 +11,7 @@
       "height": 1336,
       "sha256": "65444ccd908b1f93372d5b387047fcb1e4bbbc6924aadb623dae403aac33bbb2",
       "keyword": "匯率、央行",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
+      "article_url": "https://readers.ctee.com.tw/cm/20261118/a02aa2"
     },
     {
       "src": "archive/2026-11-18/images/20261118_02_央行.jpg",
@@ -19,7 +19,7 @@
       "height": 1366,
       "sha256": "4cb74b8ef380caf2b803d9fcbd66d2ab5dd4ce370ed49e75d3545ced8a9d7d56",
       "keyword": "央行",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
+      "article_url": "https://readers.ctee.com.tw/cm/20261118/a02aa2"
     },
     {
       "src": "archive/2026-11-18/images/20261118_03_凱基.jpg",
@@ -27,7 +27,7 @@
       "height": 1541,
       "sha256": "e3553f1b374f0734717014bdd2b960517ea9c1ac532cc150c3d95cf71203daa5",
       "keyword": "凱基",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a04aa4"
+      "article_url": "https://readers.ctee.com.tw/cm/20261118/a05aa5"
     },
     {
       "src": "archive/2026-11-18/images/20261118_04_金控.jpg",
@@ -75,7 +75,7 @@
       "height": 1110,
       "sha256": "ca4820a415f9af3cf49da52a0b8897a4c75aca0725da6f50965bd82642a8e8f1",
       "keyword": "凱基",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a26ab2"
+      "article_url": "https://readers.ctee.com.tw/cm/20261118/a27ab3"
     },
     {
       "src": "archive/2026-11-18/images/20261118_10_金控.jpg",
@@ -91,7 +91,7 @@
       "height": 1149,
       "sha256": "2eb3742c40c2ab6b89dd7fb07bed84bbd4b4e28373e372d9957b27fafc06bb08",
       "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a32ab8"
+      "article_url": "https://readers.ctee.com.tw/cm/20261118/a31ab7"
     },
     {
       "src": "archive/2026-11-18/images/20261118_12_央行.jpg",
@@ -115,7 +115,7 @@
       "height": 1230,
       "sha256": "e3c621e5d00b35112290ac453eae405664b702309259b0b1a01e2ec69f831490",
       "keyword": "壽險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a40ac4"
+      "article_url": "https://readers.ctee.com.tw/cm/20261118/a41ac5"
     }
   ]
 }
