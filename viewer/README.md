@@ -11,13 +11,14 @@
 - 來源下載的圖片原始 bytes 直接保存，不重編碼；連續閱讀、縮圖總覽與全螢幕縮放使用同一份原圖，不另存縮圖。
 - 原圖檔名：`YYYYMMDD_01_關鍵字1、關鍵字2.jpg`（例如 `20261118_01_匯率、央行.jpg`）。每張圖的所有命中關鍵字以「、」分隔，重複內容依 SHA-256 只保存一份。
 - 每日保留一份 ZIP 供整批下載，ZIP 內檔名與原圖資料夾相同，不額外在網站根目錄保存重複 ZIP。
+- ZIP 檔名固定為 `工商時報_YYYYMMDD.zip`（如 `工商時報_20261118.zip`），實際 GitHub Pages 原檔名及下載連結都使用同名；不使用 `latest.zip`。
 - 所有日期儲存在 viewer-archive 分支的 viewer/public/archive/YYYY-MM-DD/，提供各日資料、原圖及 ZIP，過去日期不因新日期出現而刪除。
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
 ## 閱讀器批次下載及指定日期重跑（2026-11-19）
 
-- 下載全部剪報只保留閱讀器操作區的一個按鈕，不再於頁首重複；選取任一歷史日期時使用該日期歸檔的 `archive/YYYY-MM-DD/latest.zip`。
+- 下載全部剪報只保留閱讀器操作區的一個按鈕，不再於頁首重複；選取任一歷史日期時使用該日期歸檔的 `archive/YYYY-MM-DD/工商時報_YYYYMMDD.zip`。
 - LINE LIFF 內點擊下載會呼叫 `liff.openWindow({external:true})` 將 ZIP 交給手機預設瀏覽器；一般 LINE 內建 WebView 使用 LINE 支援的 `openExternalBrowser=1`；一般瀏覽器保留原生 ZIP 下載。是否真的儲存成功仍由手機瀏覽器／作業系統決定，無法在頁面強制繞過系統下載限制。
 - 爬蟲、原圖建置和 GitHub Actions 都支援 `CTEE_TARGET_DATE=YYYY-MM-DD`，workflow 手動觸發時可選填 `target_date`。沒指定仍照台灣當日執行。歷史重跑會以既有歸檔的文章網址補足歷史版面連結，但原圖仍逐篇重新擷取，不複製舊圖冒充重跑。
 - 2026-11-18 已成功重跑並發布 31 張依 SHA-256 去重的原圖及當日 ZIP；驗證後 LINE Push API 回傳 HTTP 200，GitHub Actions run `44343340866`。舊日期資料仍留在同一日期資料夾，不建立第二份。
