@@ -15,16 +15,17 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
-## GitHub 原生關鍵字管理
+## 關鍵字：Supabase 單一正式來源（2026-11-18）
 
-- 網站：https://hub-google.github.io/ctee-line-bot/keywords.html。正式關鍵字來源是 `master/keywords.txt`。
-- 網頁管理者專區已恢復，僅使用 GitHub Contents API，沒有 Cloudflare、Supabase、第三方收件服務或定時輪詢。
-- 管理者輸入管理金鑰 `9` 後，仍須在瀏覽器當次工作階段輸入該儲存庫的 GitHub fine-grained Personal Access Token（僅 `Contents: Read and write`）；Token 只在 JS 記憶體保存，關閉或登出即清除，不會寫入程式庫或瀏覽器儲存空間。固定管理金鑰不是 GitHub 的授權，不能取代 token。
-- 管理者可手動提出多筆新增或刪除草稿，逐字詞核准或駁回。按核准時，網頁取得 GitHub 最新 SHA，立即以 GitHub Contents API 修改 `master/keywords.txt`，再重讀確認生效；若 API 回傳錯誤或驗證不符，不顯示核准成功。每項獨立處理、失敗重試不修改其他字詞；駁回草稿不更動 GitHub。
-- **這個頁面目前不能接收匿名網頁申請**：GitHub Pages 是靜態網頁，GitHub Issues、Contents API 和 Actions workflow_dispatch 的寫入操作都需要 GitHub 授權。若不能使用其他服務、也不要求一般使用者具有 GitHub 帳號，就沒有 GitHub 原生的匿名表單收件管道。管理者介面目前是手動輸入草稿，並非會保存匿名使用者申請的收件匣；不能宣稱完整的公開投稿／審核流程已完成。
-- 語法檢查及 GitHub-only 直接寫入程式的靜態驗證由 `.github/workflows/publish_keywords.yml` 執行；實際 GitHub API 寫入需要管理者在網站輸入其 GitHub 授權，無法在不取得使用者 Token 的情況下聲稱端到端驗收通過。
-- 歷史五筆審核處理記錄保留在 `viewer/keyword_gateway/processed.json`；已核准的關鍵字變動保持在 GitHub `keywords.txt`。
-- 2026-11-18 已刪除臨時建立的 Cloudflare Worker `ctee-keywords-inbox` 及 KV `CTEE_KEYWORDS_INBOX_ONLY`；請勿在未獲明確授權下新增此類資源。
+- 正式追蹤清單已從原本 33 個 GitHub 關鍵字遷移到 Supabase `public.ctee_keywords`。新資料完全以 Supabase 為準；根目錄舊 `keywords.txt` 在完成驗收後刪除，舊版備份仍保留於 `legacy/2026-11-18/`。
+- 網站：`https://hub-google.github.io/ctee-line-bot/keywords.html`。一般訪客不用任何帳號即可在網頁提出新增、刪除關鍵字建議；單次支援 1～20 個字詞，輸入姓名與選填原因。表單留在本站，不跳 GitHub。
+- 管理者在同一網站輸入原管理金鑰 `9`，以待審核／已核准／已駁回分頁管理。每個字詞獨立核准或駁回；一批建議中核准其中一項，其他項不受影響。管理金鑰僅送到 Supabase Edge Function 做伺服器端驗證，不要求 GitHub Token。
+- **即時更新**：網站呼叫 Supabase Edge Function `ctee-keywords`，其使用 `public.ctee_review_keyword_item(uuid,text)` 在同一資料庫交易中核准某項申請並新增或刪除 `ctee_keywords`。成功後直接回傳最新清單，網頁立即呈現「已核准・已生效」。未經確認不報成功；沒有 GitHub Actions 同步或任何 20 秒輪詢。
+- **剪報程式**：`ctee_downloader_cloud.py` 的 `load_keywords()` 直接請求 `https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords`。API 空值、錯誤或無法連線時停止本次擷取，不使用過期的 GitHub 清單當備援。
+- **資料表**：`public.ctee_keywords`（追蹤字詞）、`public.ctee_keyword_requests`（每項申請及審核結果）、`public.ctee_keyword_access_events`（防濫用記錄）。三張表皆啟用 RLS，匿名角色無直接資料表權限；公開讀取、匿名提交和管理操作都由專用 Edge Function 驗證與執行。其他 Supabase 專案表與 API 不修改。
+- **原始碼**：`supabase/functions/ctee-keywords/index.ts`；資料庫 migration `ctee_keyword_supabase_source_and_review` 已套用至 `unapiwajmgqqtdkixaab`。
+- **驗收**：GitHub Actions 已確認公開 API 能讀取清單、CORS 正常、網站 JavaScript 語法有效，並完成一次實際端到端測試（匿名一次送出三項、分項核准／駁回、確認立即生效，再核准移除驗收字詞）。測試字詞和申請紀錄已清理，不影響既有 33 個正式關鍵字。
+- **歷史**：先前已完成的 5 項 GitHub 審核決策紀錄保留於 `viewer/keyword_gateway/processed.json` 供追溯；它不參與新的 Supabase 流程。
 
 ## LINE
 
