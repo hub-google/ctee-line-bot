@@ -49,7 +49,8 @@ jobs:
           html = Path("viewer/public/index.html").read_text(encoding="utf-8")
           assert '<script type="module">' in html
           script = html.split('<script type="module">', 1)[1].split("</script>", 1)[0]
-          assert "https://line.me/R/share?text=" in script
+          assert "flexShareLaunchUrl" in script
+          assert "window.liff.shareTargetPicker([buildShareCard()]" in script
           assert "sharePanel" not in script
           Path("/tmp/ctee-viewer.mjs").write_text(script, encoding="utf-8")
           PY
