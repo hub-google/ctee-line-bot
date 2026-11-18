@@ -17,17 +17,15 @@
 
 ## 網站關鍵字建議與逐項審核（2026-11-18）
 
-- 唯一的新聞追蹤關鍵字檔案是 GitHub `master/keywords.txt`。爬蟲從此檔取得關鍵字，失敗時退回 GitHub Actions checkout 裡同一份檔案，不使用 Supabase。
-- 網站：`https://hub-google.github.io/ctee-line-bot/keywords.html`，訪客可直接送出新增及刪除項目，**不用登入 GitHub、不跳頁**。搜尋輸入框使用 `type=search`、停用自動填字並等使用者主動點擊才可編輯，避免 Chrome 自動塞入 Email。
-- 網頁為純靜態 GitHub Pages；匿名網站無法安全地持有 GitHub Token。因此使用獨立的免費 Cloudflare Worker `ctee-keywords-inbox` 加獨立 KV `CTEE_KEYWORDS_INBOX_ONLY` 作**暫時收件／審核緩衝**，不是 Supabase，也不在 Worker 裡保存 GitHub Token。API URL：`https://ctee-keywords-inbox.ber-at.workers.dev`。Worker 程式：`viewer/keyword_gateway/worker.js`。
-- 提案 POST `/submit`：`{request_id:UUID,name,reason,items:[{operation:"add"|"remove",keyword}]}`，一次 1～20 個字詞；後端逐字詞存不同紀錄，失敗時網站明確顯示錯誤，不會假裝送出成功。相同 request_id 重送不會產生重複項目。匿名提交有限速。
-- **網站審核**：管理者輸入原指定管理金鑰 `9`，使用 `GET /reviews` 在網站查看申請，`POST /review` 對單一 item 做 `approved` 或 `rejected`，每個字詞可獨立處理，例如 A 申請「新增 test1、test2，刪除 test3」會有三個核准／駁回按鈕。這個流程不要求管理者 GitHub Token，也不會跳 GitHub。金鑰放在 Worker Secret `CTEE_ADMIN_PIN`，不放在靜態網站原始碼。
-- **寫入 GitHub**：`.github/workflows/apply_keyword_reviews.yml` 每 5 分鐘讀取 Worker 的唯讀 `GET /export`，用 GitHub Actions 內建 `GITHUB_TOKEN` 將已核准的逐項變更套用到 `master/keywords.txt`，並將每個已決定的 item 寫入 `viewer/keyword_gateway/processed.json`。這份 GitHub 檔案用於防重複套用。實際同步受 GitHub Actions 排程延遲影響，並非按下核准瞬間更新；網站顯示「同步中」及「已生效」。
-- **完整性**：只在 GitHub 一次 commit 修改 `keywords.txt` 與決策處理記錄；拒絕覆蓋空值、格式異常或服務錯誤資料。每次定時排程無新項目時不 commit。可手動在 GitHub Actions 執行 `Apply CTEE website keyword reviews to GitHub`，與每日新聞推播是兩個獨立流程。
-- **測試**：`viewer/keyword_gateway/test_worker.mjs` 用記憶體 KV 測試匿名送出、重複請求、分項核准／駁回、管理金鑰、CORS 和唯讀匯出；發布 GitHub Pages 前執行測試。
-- **安全**：為遵循原定預設，管理金鑰目前是 `9`；這只有一個字元，對公開網路**並不安全**，儘管後端有錯誤次數限制。建議儘早換成長密碼。密碼只存在 Cloudflare Worker Secret，管理者登入後只保存在當前瀏覽器記憶體，不會寫入 GitHub。此功能每次動作需要少量免費 Worker/KV 請求，實際使用仍受帳戶免費額度限制。
-- **清理**：原本臨時建立的 Supabase 4 張 `ctee_keyword_*` 資料表及 RPC 已刪，舊 Supabase 同步流程已移除。其他專案資源未變更。舊 `ctee-keywords` Edge Function 曾於 2026-11-18 建立，與此新版流程無關；後續處理需避免影響其他專案。
-- 2026-11-18 核准的 `test2` 已保留在 `master/keywords.txt`。
+- 正式追蹤關鍵字以 GitHub `master/keywords.txt` 為準，爬蟲優先讀取該檔，失敗時才使用工作目錄中的同一份備援，不依賴 Supabase。
+- 網頁：`https://hub-google.github.io/ctee-line-bot/keywords.html`。匿名訪客在網頁提出新增及刪除建議，管理者也在網站審核；每個字詞獨立核准或駁回。
+- 網站使用獨立 Cloudflare Worker `ctee-keywords-inbox` + KV `CTEE_KEYWORDS_INBOX_ONLY` 暫存申請與審核紀錄，原始程式在 `viewer/keyword_gateway/worker.js`，不使用 Supabase。
+- **即時核准方式**：`POST /review` 收到一項核准時，先透過 GitHub Contents API 讀取 `master/keywords.txt` 和 SHA，直接增刪該詞並 PUT 到 GitHub。取得成功 commit 後才把 KV 紀錄設成已核准，回傳 `synced:true`。拒絕只修改該項狀態，沒有 Github 寫入。SHA 版本衝突會重試，GitHub 失敗不會顯示核准成功。
+- **授權前提**：必須在 Cloudflare Worker `ctee-keywords-inbox` 的 Secrets 設定 `GITHUB_WRITE_TOKEN`，使用僅授權 `hub-google/ctee-line-bot`、`Contents: Read and write` 的 fine-grained GitHub PAT。不可放在網頁原始碼或 GitHub 程式庫。**截至 2026-11-18 尚未配置這項 Secret；新核准會收到清楚錯誤而非假成功。** ChatGPT 的 GitHub 連線不能直接轉交憑證到公開 Worker。
+- **無固定輪詢**：已刪掉管理網站每 20 秒查詢的 `setInterval`。`.github/workflows/apply_keyword_reviews.yml` 已移除定時 cron，只保留手動 `workflow_dispatch` 作為舊資料復原途徑。正常核准不需要等 GitHub Actions 排程。
+- **畫面回應**：核准成功後直接使用 API 返回的 GitHub 關鍵字清單更新畫面。拒絕不更新清單。失敗保留待審核，不得顯示已生效。
+- **驗證**：`viewer/keyword_gateway/test_worker.mjs` 使用模擬 GitHub Contents API 測試逐項核准、拒絕、沒有 Token 不得核准、只在 GitHub 提交成功後回報。GitHub Pages 發布前執行測試。
+- 歷史防重複執行紀錄保留在 `viewer/keyword_gateway/processed.json`；之前已核准並寫入的變更包括新增「什麼」、刪除「阿」和 `test2`、保留被駁回的「凱壽」。這些既有變更透過 ChatGPT GitHub 連線實際提交，不代表 Worker 的私密自動授權已設定。
 
 ## LINE
 
