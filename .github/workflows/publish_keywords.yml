@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - viewer/public/keywords.html
+      - keywords.txt
       - viewer/send_preview.py
       - .github/workflows/daily_ctee.yml
       - ctee_downloader_cloud.py
@@ -41,16 +42,17 @@ jobs:
           Path("/tmp/ctee-keywords.mjs").write_text(code, encoding="utf-8")
           PY
           node --check /tmp/ctee-keywords.mjs
-      - name: Smoke test public keyword API
+      - name: Verify GitHub-only keyword integration
         run: |
           python - <<'PY'
-          import json, urllib.request
-          endpoint = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords?action=keywords"
-          with urllib.request.urlopen(endpoint, timeout=20) as resp:
-              content = json.load(resp)
-          assert len(content.get("keywords", [])) >= 1, content
-          assert isinstance(content.get("revision"), int), content
-          print("Keyword API passed:", len(content["keywords"]), "entries")
+          from pathlib import Path
+          page = Path("viewer/public/keywords.html").read_text(encoding="utf-8")
+          crawler = Path("ctee_downloader_cloud.py").read_text(encoding="utf-8")
+          assert "raw.githubusercontent.com" in page
+          assert "/issues/new" in page
+          assert "KEYWORDS_API_URL" not in crawler
+          assert "supabase.co" not in page + crawler
+          print("GitHub-only keyword UI + crawler validated")
           PY
       - name: Update persistent gallery with keyword page
         run: |
