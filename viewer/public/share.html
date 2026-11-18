@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173c32">
+<meta name="robots" content="noindex,nofollow">
+<title>工商時報｜快速分享</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:#f6f8f7;color:#20342d;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;display:grid;place-items:center}
+main{text-align:center;padding:24px;max-width:340px}
+h1{font-size:20px;margin:4px 0 8px}p{color:#60746a;margin:0}
+.spinner{width:28px;height:28px;border:3px solid #d9e9e2;border-top-color:#176b57;border-radius:50%;animation:turn .75s linear infinite;margin:0 auto 20px}
+@keyframes turn{to{transform:rotate(360deg)}}
+button{margin-top:16px;padding:11px 22px;border:0;border-radius:12px;background:#176b57;color:white;font:inherit;cursor:pointer}
+button[hidden],.spinner[hidden]{display:none}
+</style>
+</head>
+<body>
+<main>
+<div id="spinner" class="spinner" role="status" aria-label="正在開啟分享"></div>
+<h1>工商時報每日剪報</h1>
+<p id="status" aria-live="polite">正在開啟 LINE 好友選擇畫面…</p>
+<button id="retry" type="button" hidden>重新開啟分享</button>
+</main>
+<script src="liff-config.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+(() => {
+'use strict';
+const status=document.getElementById('status');
+const retry=document.getElementById('retry');
+const spinner=document.getElementById('spinner');
+const shareId=String(window.CTEE_SHARE_LIFF_ID||'').trim();
+const readerId=String(window.CTEE_LIFF_ID||'').trim();
+let started=false;
+let initPromise=null;
+
+function showProblem(msg){
+  status.textContent=msg;
+  spinner.hidden=true;
+  retry.hidden=false;
+}
+function card(date,count){
+  const dateText=date.replaceAll('-','/');
+  const readableCount=count?'共 '+count+' 則':'精選報導';
+  const link='https://liff.line.me/'+encodeURIComponent(readerId)+'?date='+encodeURIComponent(date);
+  const again='https://liff.line.me/'+encodeURIComponent(shareId)+'?date='+encodeURIComponent(date)+(count?'&count='+count:'');
+  return {
+    type:'flex',
+    altText:'工商時報｜'+dateText+' 每日剪報 '+readableCount,
+    contents:{
+      type:'bubble',size:'mega',
+      header:{type:'box',layout:'vertical',backgroundColor:'#173C32',paddingAll:'20px',contents:[
+        {type:'text',text:'工商時報',weight:'bold',size:'xl',color:'#FFFFFF'},
+        {type:'text',text:'每日新聞剪報  |  原圖典藏',size:'xs',color:'#C3DFD5',margin:'xs'}
+      ]},
+      body:{type:'box',layout:'vertical',spacing:'md',contents:[
+        {type:'text',text:dateText+'  精選報導',weight:'bold',size:'md',color:'#1D3331'},
+        {type:'text',text:count?'依照追蹤關鍵字，今日共整理 '+count+' 則相關新聞。':'依照追蹤關鍵字整理的每日新聞剪報。',wrap:true,size:'sm',color:'#50615D'},
+        {type:'separator',margin:'md',color:'#E7EDEB'},
+        {type:'text',text:'原圖畫質・雙指縮放・歷史查閱・整批下載',size:'xs',wrap:true,color:'#65736D'}
+      ]},
+      footer:{type:'box',layout:'vertical',spacing:'sm',contents:[
+        {type:'button',style:'primary',height:'sm',color:'#176B57',action:{type:'uri',label:'開啟每日剪報',uri:link}},
+        {type:'button',style:'primary',height:'sm',color:'#286BA6',action:{type:'uri',label:'分享新聞給好友',uri:again}},
+        {type:'button',style:'primary',height:'sm',color:'#7156A4',action:{type:'uri',label:'調整追蹤關鍵字',uri:'https://hub-google.github.io/ctee-line-bot/keywords.html'}}
+      ]}
+    }
+  };
+}
+async function start(){
+  if(started)return;
+  started=true;
+  retry.hidden=true;
+  spinner.hidden=false;
+  status.textContent='正在開啟 LINE 好友選擇畫面…';
+  try{
+    if(!shareId||!readerId)throw new Error('LIFF 設定尚未完成。');
+    if(!window.liff)throw new Error('LINE SDK 載入失敗，請重新開啟。');
+    if(!initPromise)initPromise=window.liff.init({liffId:shareId});
+    await initPromise;
+    // LINE may initially place extra parameters inside liff.state. Read only
+    // after liff.init resolves and applies the secondary redirect.
+    const params=new URLSearchParams(location.search);
+    const date=params.get('date')||'';
+    const countParam=params.get('count')||'';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error('缺少有效的剪報日期，請重新點擊分享。');
+    const count=/^\d{1,3}$/.test(countParam)&&Number(countParam)>0?Number(countParam):0;
+    if(!window.liff.isLoggedIn()){
+      if(window.liff.isInClient())throw new Error('LINE 登入狀態失效，請重新開啟。');
+      window.liff.login({redirectUri:location.href});
+      return;
+    }
+    if(!window.liff.isApiAvailable('shareTargetPicker'))throw new Error('請在手機 LINE App 內開啟此分享功能。');
+    const result=await window.liff.shareTargetPicker([card(date,count)],{isMultiple:true});
+    if(window.liff.isInClient()){
+      window.liff.closeWindow();
+      return;
+    }
+    spinner.hidden=true;
+    if(result?.status==='success') status.textContent='Flex 剪報已分享完成。';
+    else status.textContent='已取消分享。';
+    retry.hidden=false;
+  }catch(err){
+    showProblem('無法開啟 LINE 分享：'+(err?.message||String(err)));
+  }finally{started=false}
+}
+retry.addEventListener('click',()=>{void start()});
+void start();
+})();
+</script>
+</body>
+</html>
