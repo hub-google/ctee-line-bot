@@ -89,7 +89,12 @@ async function parseBody(request) {
 }
 export default {
   async fetch(request, env) {
-    if (request.method === "OPTIONS") return response({}, 204);
+    if (request.method === "OPTIONS") return new Response(null,{status:204,headers:{
+      "Access-Control-Allow-Origin":SITE_ORIGIN,
+      "Access-Control-Allow-Headers":"Content-Type, X-CTEE-Admin-Pin",
+      "Access-Control-Allow-Methods":"GET, POST, OPTIONS",
+      "Vary":"Origin"
+    }});
     if (!env.INBOX) return response({error:"收件空間未完成設定"},503);
     const origin = request.headers.get("Origin");
     if (origin && origin !== SITE_ORIGIN) return response({error:"來源未授權"},403);
@@ -131,7 +136,7 @@ export default {
           const key="request:"+requestId+"-"+i;
           if(await env.INBOX.get(key))continue;
           await env.INBOX.put(key,JSON.stringify({
-            id:requestId+"-"+i", request_id:requestId,
+            id:requestId+"-"+i, request_id:requestId,
             name,reason,operation:items[i].operation,keyword:items[i].keyword,
             status:"pending",created_at:now,reviewed_at:null
           }));
