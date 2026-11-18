@@ -16,5 +16,17 @@
     "keyword": "凱壽",
     "decision": "rejected",
     "effect": "no-op"
+  },
+  "8eefff9a-2b1a-46e6-9008-0f6061f7e8dc-0": {
+    "operation": "add",
+    "keyword": "什麼",
+    "decision": "approved",
+    "effect": "changed"
+  },
+  "8eefff9a-2b1a-46e6-9008-0f6061f7e8dc-1": {
+    "operation": "remove",
+    "keyword": "阿",
+    "decision": "approved",
+    "effect": "changed"
   }
 }
