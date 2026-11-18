@@ -1,61 +1,124 @@
-"""Send exactly one test LINE message, but only after the viewer is publicly readable."""
-import json
+"""Verify the published dated gallery before pushing one official LINE Flex card.
+
+A registered LIFF_ID is optional. A Flex message is the chat card; a LIFF URL
+is a separately registered web-app entrypoint. Never invent a LIFF ID.
+"""
+import hashlib
 import os
+import re
 import time
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 import requests
 
 site = os.environ["SITE_URL"].rstrip("/") + "/"
 token = os.environ["LINE_ACCESS_TOKEN"]
 user_id = os.environ["LINE_USER_ID"]
+expected = os.environ.get("EXPECTED_REF", "")
 session = requests.Session()
-error = "not yet checked"
-count = 0
+last_error = "not ready"
+data = None
 
-# GitHub Pages may need a short propagation delay after deploy-pages succeeds.
 for attempt in range(48):
     try:
-        html = session.get(site, timeout=15)
-        html.raise_for_status()
-        if "每日剪報" not in html.text or "photoswipe" not in html.text:
-            raise RuntimeError("站點內容與新閱讀器不符")
-        resp = session.get(urljoin(site, "data.json"), timeout=15, headers={"Cache-Control": "no-cache"})
-        resp.raise_for_status()
-        data = resp.json()
-        if data.get("build_ref") != os.environ.get("EXPECTED_REF"):
-            raise RuntimeError("站點仍是舊版本，等待 GitHub Pages 發布")
-        count = len(data["images"])
-        if count < 1:
-            raise RuntimeError("無有效剪報內容")
-        first = urljoin(site, data["images"][0]["src"])
-        image = session.get(first, timeout=20, headers={"Range": "bytes=0-8191"})
-        image.raise_for_status()
-        if not image.headers.get("Content-Type", "").startswith("image/"):
-            raise RuntimeError("第一張圖片無法讀取")
-        print(f"[viewer] Public site checked: {site}; {count} images", flush=True)
+        res = session.get(site, timeout=15)
+        res.raise_for_status()
+        if "每日剪報" not in res.text or "photoswipe" not in res.text:
+            raise RuntimeError("Published site does not look like the new viewer")
+        feed = session.get(urljoin(site, "data.json"), timeout=15, headers={"Cache-Control": "no-cache"})
+        feed.raise_for_status()
+        data = feed.json()
+        if expected and data.get("build_ref") != expected:
+            raise RuntimeError("GitHub Pages still serving an older build")
+        images = data.get("images", [])
+        if not images:
+            raise RuntimeError("No clipping images")
+        history_resp = session.get(urljoin(site, "history.json"), timeout=15)
+        history_resp.raise_for_status()
+        history = history_resp.json().get("dates", [])
+        if data.get("date") not in [d["date"] for d in history]:
+            raise RuntimeError("Today's issue missing from persistent history")
+        img = session.get(urljoin(site, images[0]["src"]), timeout=20)
+        img.raise_for_status()
+        if not img.headers.get("Content-Type", "").lower().startswith("image/"):
+            raise RuntimeError("Original clipping not served as an image")
+        if hashlib.sha256(img.content).hexdigest() != images[0]["sha256"]:
+            raise RuntimeError("Original clipping checksum changed")
+        zip_resp = session.get(urljoin(site, data["zip"]), headers={"Range": "bytes=0-63"}, timeout=15)
+        zip_resp.raise_for_status()
+        if not zip_resp.content.startswith(b"PK"):
+            raise RuntimeError("Archive download does not contain a ZIP")
+        print(f"[viewer] Verified live date {data['date']}; {len(images)} exact original images, archive ZIP, {len(history)} history days", flush=True)
         break
     except Exception as exc:
-        error = str(exc)
-        print(f"[viewer] Readiness attempt {attempt + 1} failed: {error}", flush=True)
+        last_error = str(exc)
+        print(f"[viewer] Readiness {attempt + 1}/48: {last_error}", flush=True)
         if attempt < 47:
             time.sleep(5)
 else:
-    raise SystemExit("停止推播：新網站尚未可正常閱讀。最後錯誤：" + error)
+    raise SystemExit("No LINE push: viewer not ready. " + last_error)
 
-text = (
-    "【工商時報剪報｜新版閱讀器測試】\n"
-    f"今日已打包 {count} 張新聞剪報。\n"
-    "可在同一頁連續閱讀、雙指縮放、單張下載或打包 ZIP 下載。\n\n"
-    f"點此試用：{site}\n\n"
-    "這只是新版測試，原本每日 Rentry 推播不變。"
-)
-payload = {"to": user_id, "messages": [{"type": "text", "text": text}]}
+date = data["date"]
+date_label = data.get("date_label", date)
+count = len(images)
+normal_url = site + "?date=" + quote(date, safe="")
+liff_id = os.environ.get("LIFF_ID", "").strip()
+if liff_id and re.fullmatch(r"[A-Za-z0-9_-]+", liff_id):
+    reader_url = "https://liff.line.me/" + liff_id + "?date=" + quote(date, safe="")
+    print("[LINE] Using configured LIFF application URL", flush=True)
+else:
+    reader_url = normal_url
+    print("[LINE] No registered LIFF_ID; using direct LINE in-app browser link", flush=True)
+zip_url = urljoin(site, data["zip"])
+share_text = f"工商時報每日剪報｜{date_label}\n{count} 則相關新聞\n{reader_url}"
+share_link = "https://line.me/R/msg/text/?" + quote(share_text, safe="")
+keyword_url = "https://github.com/hub-google/ctee-line-bot/edit/master/keywords.txt"
+
+message = {
+    "type": "flex",
+    "altText": f"工商時報｜{date_label} 每日剪報，共 {count} 則，點擊閱讀原圖",
+    "contents": {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#173C32",
+            "paddingTop": "18px", "paddingBottom": "18px", "paddingStart": "20px", "paddingEnd": "20px",
+            "contents": [
+                {"type": "text", "text": "工商時報", "size": "xl", "weight": "bold", "color": "#FFFFFF"},
+                {"type": "text", "text": "每日新聞剪報  |  閱讀器測試", "size": "xs", "color": "#C3DFD5", "margin": "xs"}
+            ]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "md",
+            "contents": [
+                {"type": "text", "text": date_label + "  精選報導", "weight": "bold", "size": "md", "color": "#1D3331"},
+                {"type": "text", "text": f"依照追蹤關鍵字，今日共整理 {count} 則相關新聞。", "wrap": True, "size": "sm", "color": "#50615D"},
+                {"type": "separator", "margin": "md", "color": "#E7EDEB"},
+                {"type": "text", "text": "原圖畫質・雙指縮放・歷史查閱・整批下載", "size": "xs", "wrap": True, "color": "#65736D"}
+            ]
+        },
+        "footer": {
+            "type": "box", "layout": "vertical", "spacing": "sm",
+            "contents": [
+                {"type": "button", "style": "primary", "color": "#176B57",
+                 "action": {"type": "uri", "label": "開啟每日剪報", "uri": reader_url}},
+                {"type": "button", "style": "secondary",
+                 "action": {"type": "uri", "label": "下載今日全部圖片", "uri": zip_url}},
+                {"type": "button", "style": "secondary",
+                 "action": {"type": "uri", "label": "分享新聞給好友", "uri": share_link}},
+                {"type": "button", "style": "link",
+                 "action": {"type": "uri", "label": "調整追蹤關鍵字", "uri": keyword_url}}
+            ]
+        }
+    }
+}
+payload = {"to": user_id, "messages": [message]}
 response = session.post(
     "https://api.line.me/v2/bot/message/push",
     json=payload,
     headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
-    timeout=20
+    timeout=20,
 )
-response.raise_for_status()
-print(f"[LINE] New viewer test push accepted, HTTP {response.status_code}", flush=True)
+if response.status_code != 200:
+    raise RuntimeError(f"LINE Flex push rejected: HTTP {response.status_code} {response.text[:1000]}")
+print(f"[LINE] Formal Flex preview accepted: HTTP {response.status_code}", flush=True)
