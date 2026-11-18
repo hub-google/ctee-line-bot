@@ -15,17 +15,14 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
-## 網站關鍵字建議與逐項審核（2026-11-18）
+## GitHub 關鍵字清單（2026-11-18）
 
-- 正式追蹤關鍵字以 GitHub `master/keywords.txt` 為準，爬蟲優先讀取該檔，失敗時才使用工作目錄中的同一份備援，不依賴 Supabase。
-- 網頁：`https://hub-google.github.io/ctee-line-bot/keywords.html`。匿名訪客在網頁提出新增及刪除建議，管理者也在網站審核；每個字詞獨立核准或駁回。
-- 網站使用獨立 Cloudflare Worker `ctee-keywords-inbox` + KV `CTEE_KEYWORDS_INBOX_ONLY` 暫存申請與審核紀錄，原始程式在 `viewer/keyword_gateway/worker.js`，不使用 Supabase。
-- **即時核准方式**：`POST /review` 收到一項核准時，先透過 GitHub Contents API 讀取 `master/keywords.txt` 和 SHA，直接增刪該詞並 PUT 到 GitHub。取得成功 commit 後才把 KV 紀錄設成已核准，回傳 `synced:true`。拒絕只修改該項狀態，沒有 Github 寫入。SHA 版本衝突會重試，GitHub 失敗不會顯示核准成功。
-- **授權前提**：必須在 Cloudflare Worker `ctee-keywords-inbox` 的 Secrets 設定 `GITHUB_WRITE_TOKEN`，使用僅授權 `hub-google/ctee-line-bot`、`Contents: Read and write` 的 fine-grained GitHub PAT。不可放在網頁原始碼或 GitHub 程式庫。**截至 2026-11-18 尚未配置這項 Secret；新核准會收到清楚錯誤而非假成功。** ChatGPT 的 GitHub 連線不能直接轉交憑證到公開 Worker。
-- **無固定輪詢**：已刪掉管理網站每 20 秒查詢的 `setInterval`。`.github/workflows/apply_keyword_reviews.yml` 已移除定時 cron，只保留手動 `workflow_dispatch` 作為舊資料復原途徑。正常核准不需要等 GitHub Actions 排程。
-- **畫面回應**：核准成功後直接使用 API 返回的 GitHub 關鍵字清單更新畫面。拒絕不更新清單。失敗保留待審核，不得顯示已生效。
-- **驗證**：`viewer/keyword_gateway/test_worker.mjs` 使用模擬 GitHub Contents API 測試逐項核准、拒絕、沒有 Token 不得核准、只在 GitHub 提交成功後回報。GitHub Pages 發布前執行測試。
-- 歷史防重複執行紀錄保留在 `viewer/keyword_gateway/processed.json`；之前已核准並寫入的變更包括新增「什麼」、刪除「阿」和 `test2`、保留被駁回的「凱壽」。這些既有變更透過 ChatGPT GitHub 連線實際提交，不代表 Worker 的私密自動授權已設定。
+- 唯一正式來源：`master/keywords.txt`。爬蟲直接讀取 GitHub，不依賴 Cloudflare、Supabase 或其他後端。
+- 公開網頁：`https://hub-google.github.io/ctee-line-bot/keywords.html`，可搜尋和瀏覽追蹤關鍵字。
+- 使用者已明確要求移除先前擅自建立的 Cloudflare 收件資源。因此已刪除 `ctee-keywords-inbox` Worker 及獨立 KV `CTEE_KEYWORDS_INBOX_ONLY`，並刪除 GitHub 上的 Worker 原始碼、測試、同步程式與 Actions 同步工作流程。
+- **線上匿名送出與網站管理審核目前不可用**：純靜態 GitHub Pages 不能安全地接受匿名寫入 GitHub。網站顯示此限制而不是誤報送出成功。沒有使用會要求一般使用者登入 GitHub 的跳轉替代方案。
+- 之前核准的 5 項決議已保存在 `viewer/keyword_gateway/processed.json`；相關核准與駁回已套用至 `keywords.txt`，保留原始歷史以免資料遺失。
+- 不要在未獲明確要求的情況下再新增 Cloudflare Worker、KV、Supabase 資料表或其他中繼服務，也不要在公開網頁中放置 GitHub 個人存取權杖。
 
 ## LINE
 
