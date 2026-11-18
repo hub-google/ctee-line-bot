@@ -27,17 +27,17 @@
 - **驗收**：GitHub Actions 已確認公開 API 能讀取清單、CORS 正常、網站 JavaScript 語法有效，並完成一次實際端到端測試（匿名一次送出三項、分項核准／駁回、確認立即生效，再核准移除驗收字詞）。測試字詞和申請紀錄已清理，不影響既有 33 個正式關鍵字。
 - **歷史**：先前已完成的 5 項 GitHub 審核決策紀錄保留於 `viewer/keyword_gateway/processed.json` 供追溯；它不參與新的 Supabase 流程。
 
-## LINE Flex 分享與 LIFF（2026-11-18）
+## LINE Flex 分享（2026-11-18 快速版）
 
-- **專屬 LIFF 已由 LINE 官方 API 建立並讀回驗證**：ID `2012346974-oasuaJGG`，名稱「工商時報每日剪報」，Size `Full`，Endpoint `https://hub-google.github.io/ctee-line-bot/`； scopes：`openid`、`profile`、`chat_message.write`。LIFF URL：`https://liff.line.me/2012346974-oasuaJGG`。
-- 沿用排隊怪獸的 LINE Login Channel `2012346974`，但建立**第三個獨立 LIFF App**；原有 `2012346974-bmC3fZuf`、`2012346974-jSefrnfw` 未修改。
-- 建立程序在 `hub-google/LINE` 的 `.github/scripts/create-ctee-liff.py` + `.github/workflows/create-ctee-liff.yml`；使用該 Repo 原有 `LINE_LOGIN_CHANNEL_ID` 與 `LINE_LOGIN_CHANNEL_SECRET`。建立時會檢查舊 LIFF、以 Endpoint 去重，建立後再確認 ID、scopes、Endpoint；工作流程不輸出任何憑證，且已復原為僅可手動執行。
-- 本 Repo 的 `viewer/public/liff-config.js` 設定公開 LIFF ID，`publish_keywords.yml` 更新網站及讀者介面。這個 ID 不是密鑰；Messaging API Channel Access Token 仍只能存於 GitHub Secrets。
-- 每日推播仍為 LINE Flex 卡片（「開啟每日剪報」、「分享新聞給好友」、「調整追蹤關鍵字」）。「分享新聞給好友」改為點擊 `https://liff.line.me/2012346974-oasuaJGG?date=YYYY-MM-DD&share=1`，讓剪報閱讀器在 LIFF 初始化、登入及剪報載入完成後，直接呼叫 `liff.shareTargetPicker([Flex])` 開啟 LINE 好友／群組選擇器。不再送純文字網址，也不再需要先點第二層分享按鈕。
-- 網站的「分享至 LINE」也直接呼叫 `shareTargetPicker` 傳送相同 Flex 卡片；收件人可在卡片開啟指定日期的完整 LIFF 剪報，含原圖、縮放、歷史及 ZIP 下載。
-- LIFF 不支援或登入失敗時**不能假裝已分享**，網頁明確顯示錯誤供重試，不會悄悄改傳純文字。
-- 分享對象選擇器需在 LINE Developers 同一 LINE Login Channel 啟用。GitHub CI 可以驗證 LINE 建立及推播 API，LINE App 內實際選人、授權及收件端顯示仍要手機實測。
-- `resend_ctee_line.yml` 僅可手動執行，重送已發布的剪報卡片，不重新擷取或儲存圖片；正式每日排程維持台灣時間 06:00。未新增 Worker 或高頻排程。
+- 兩個獨立工商時報 LIFF：閱讀器 `2012346974-oasuaJGG`（Endpoint `https://hub-google.github.io/ctee-line-bot/`），**快速分享** `2012346974-960BgCEy`（Endpoint `https://hub-google.github.io/ctee-line-bot/share.html`）。兩個都在 LINE Login Channel `2012346974`，Scope `openid` / `profile` / `chat_message.write`。另兩個既有排隊怪獸 LIFF 保持不變。
+- LINE Flex 卡片的「分享新聞給好友」**直接開啟獨立快速分享 LIFF**：`https://liff.line.me/2012346974-960BgCEy?date=YYYY-MM-DD&count=N`。此 LIFF 僅載入小型 HTML、公開設定及 LINE SDK；**不抓剪報 data.json、不載入新聞圖片、PhotoSwipe 或整個閱讀器**。依 URL 日期/篇數組出完整 Flex 卡片，待 `liff.init()` 完成，立即呼叫 `liff.shareTargetPicker([Flex])`，不需要再點網頁上的第二次分享按鈕。
+- 分享好友收到的仍是 **Flex 圖文卡片**；其「開啟每日剪報」前往閱讀器 LIFF `https://liff.line.me/2012346974-oasuaJGG?date=YYYY-MM-DD`，到閱讀時才載入全部原圖/歷史/ZIP。
+- 已開啟的完整閱讀器保留本頁「分享至 LINE」按鈕，直接呼叫 `shareTargetPicker`；閱讀器內產生的 Flex 卡片也改為快速分享入口。舊卡片的 `?share=1` 仍相容，不會中斷之前已經送出的連結。
+- 因 LINE 平台限制，Flex 原生選人畫面只能在 LIFF SDK 初始化、完成必要授權後由 `shareTargetPicker` 開啟；即使使用極簡快速分享頁，也無法保證絕對零載入或略過 LINE 自身的 WebView。避免純文字替代破壞使用者要求：分享失敗會顯示錯誤與重試，**不會退回傳網址文字**。
+- 兩個工商時報 LIFF 均由 `hub-google/LINE` 的 `.github/scripts/create-ctee-liff.py` 與 `.github/workflows/create-ctee-liff.yml` 使用原有 GitHub Secrets 自動建立/讀回驗證，建立後流程已恢復手動觸發。快分享、閱讀器與兩個舊 LIFF 狀態均已被建立流程檢查。
+- 網站資料由 `viewer/public/liff-config.js` 提供公開 reader/share LIFF ID；每日 workflow 必須保留兩個 ID 並同步部署 `share.html`。權杖仍只存放在 GitHub Secrets；沒有額外 Worker、Supabase 功能或高頻排程。
+- 2026-11-18 驗證：GitHub Actions 發布成功、LINE Flex validate API HTTP 200、重送 Push API HTTP 200（Run `44268579200`），14 張原圖完整存在。**手機端原生選人畫面與好友收件端尚需實機驗證**。
+- 若需重發請手動執行 `resend_ctee_line.yml`（不重爬、不重存新聞），正式日排程台灣時間 06:00。
 
 ## 備份
 
