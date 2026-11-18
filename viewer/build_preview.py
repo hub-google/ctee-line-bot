@@ -21,6 +21,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageFile
+from naming import matched_keywords, named_original
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC = Path(__file__).resolve().parent / "public"
@@ -78,43 +79,44 @@ def build_site():
     if not received_results:
         raise RuntimeError("No matching clippings. Refuse to publish an empty viewer.")
     manifest = []
-    seen_sha256 = set()
+    # Group on actual source-image checksum. If two matches point to the same
+    # image, store the image ONCE while preserving all matched keywords.
+    grouped = {}
+    for result in sorted(received_results, key=lambda x: str(x.get("aid", ""))):
+        file_info = uploaded.get(result.get("cdn_url", ""))
+        if not file_info:
+            continue
+        sha256 = file_info["sha256"]
+        if sha256 not in grouped:
+            grouped[sha256] = {"file_info": file_info, "keywords": [], "article_url": result.get("article_url", "")}
+        entry = grouped[sha256]
+        for keyword in matched_keywords(result.get("kw", "")):
+            if keyword not in entry["keywords"]:
+                entry["keywords"].append(keyword)
     archive_zip = ARCHIVE / "latest.zip"
     with zipfile.ZipFile(archive_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=3) as bundle:
         bundle.writestr("README.txt", f"工商時報剪報 {DATE_LABEL}\n僅供具有合法閱讀權限者使用。\n")
-        for result in sorted(received_results, key=lambda x: str(x.get("aid", ""))):
-            file_info = uploaded.get(result.get("cdn_url", ""))
-            if not file_info:
-                continue
+        for sha256, entry in grouped.items():
+            file_info = entry["file_info"]
             path = file_info["path"]
-            sha256 = file_info["sha256"]
-            # Content-addressed storage: identical clipping content appears only once.
-            if sha256 in seen_sha256:
-                print(f"[viewer] Skip repeated newspaper image: {sha256[:16]}", flush=True)
-                continue
             index = len(manifest) + 1
-            try:
-                # Preserve exact original image bytes, with readable 01.jpg, 02.jpg ... names.
-                # Source bytes are staged outside viewer/public, so no hash-named
-                # copies or generated thumbnail JPGs are published.
-                numbered_name = f"{index:02d}{path.suffix}"
-                target = RAW / numbered_name
-                shutil.copyfile(path, target)
-                if hashlib.sha256(target.read_bytes()).hexdigest() != sha256:
-                    raise ValueError(f"Original image checksum changed: {numbered_name}")
-                bundle.write(target, arcname=numbered_name)
-                prefix = f"archive/{DATE}/images/"
-                manifest.append({
-                    "src": prefix + numbered_name,
-                    "width": file_info["width"],
-                    "height": file_info["height"],
-                    "sha256": sha256,
-                    "keyword": result.get("kw", ""),
-                    "article_url": result.get("article_url", ""),
-                })
-                seen_sha256.add(sha256)
-            except Exception as exc:
-                print(f"[viewer] Failed to archive original image {path}: {exc}", flush=True)
+            label = "、".join(entry["keywords"])
+            numbered_name = named_original(DATE, index, label, path.suffix)
+            target = RAW / numbered_name
+            if target.exists() and hashlib.sha256(target.read_bytes()).hexdigest() != sha256:
+                raise ValueError(f"Filename collision with a different image: {numbered_name}")
+            shutil.copyfile(path, target)
+            if hashlib.sha256(target.read_bytes()).hexdigest() != sha256:
+                raise ValueError(f"Original image checksum changed: {numbered_name}")
+            bundle.write(target, arcname=numbered_name)
+            manifest.append({
+                "src": f"archive/{DATE}/images/{numbered_name}",
+                "width": file_info["width"],
+                "height": file_info["height"],
+                "sha256": sha256,
+                "keyword": label,
+                "article_url": entry["article_url"],
+            })
     if not manifest:
         raise RuntimeError("No valid source images were saved; no deployment or LINE push.")
     data = {
@@ -129,7 +131,7 @@ def build_site():
     (ARCHIVE / "data.json").write_text(body, encoding="utf-8")
     (PUBLIC / "data.json").write_text(body, encoding="utf-8")
     shutil.rmtree(STAGING, ignore_errors=True)
-    print(f"[viewer] Archived {len(manifest)} UNIQUE, numbered originals for {DATE}; no thumbnails; dated ZIP {archive_zip.stat().st_size} bytes", flush=True)
+    print(f"[viewer] Archived {len(manifest)} UNIQUE, date-and-keyword-named originals for {DATE}; no thumbnails; dated ZIP {archive_zip.stat().st_size} bytes", flush=True)
 
 if __name__ == "__main__":
     missing = [x for x in ("CTEE_USER", "CTEE_PASS") if not os.environ.get(x)]
