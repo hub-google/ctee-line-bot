@@ -257,11 +257,19 @@ async function decide(rec,decision){
       method:"POST",headers:{"Content-Type":"application/json",...adminHeaders()},
       body:JSON.stringify({id:rec.id,decision})
     });
+    if(decision==="approved"&&data.synced!==true)
+      throw Error("GitHub 尚未確認寫入，因此不能顯示已核准");
     rec.status=data.item.status;
     rec.reviewed_at=data.item.reviewed_at;
+    rec.synced=data.synced===true;
+    if(Array.isArray(data.keywords)&&data.synced===true){
+      words.splice(0,words.length,...data.keywords);
+      for(const x of [...selected])if(!words.includes(x))selected.delete(x);
+      renderWords();
+    }
     renderReviews();
     message("#adminNotice",decision==="approved"?
-      "已核准「"+rec.keyword+"」，會由 GitHub Actions 寫入 keywords.txt，其他項目不受影響。":
+      "已核准「"+rec.keyword+"」，並已寫入 GitHub keywords.txt。其他項目不受影響。":
       "已駁回「"+rec.keyword+"」，其他項目不受影響。",true);
   }catch(err){message("#adminNotice","審核失敗："+err.message)}
   finally{busy=false;for(const btn of q("#reviewList").querySelectorAll("button"))btn.disabled=false}
@@ -293,20 +301,6 @@ q("#reviewTabs").onclick=e=>{
   const btn=e.target.closest("button[data-status]");
   if(btn){reviewTab=btn.dataset.status;renderReviews()}
 };
-// Only poll while the administrator is viewing approved items that have not yet
-// appeared in the authoritative GitHub keywords.txt file. Do not show "已生效" early.
-let refreshInProgress=false;
-window.setInterval(async()=>{
-  if(refreshInProgress||busy||q("#adminDashboard").classList.contains("hidden"))return;
-  const waiting=records.some(item=>item.status==="approved" &&
-    (item.operation==="add"?!words.includes(item.keyword):words.includes(item.keyword)));
-  if(!waiting)return;
-  refreshInProgress=true;
-  try{
-    await loadWords();
-    renderReviews();
-  }finally{refreshInProgress=false}
-},20000);
 newRow();loadWords();
 </script>
 </body></html>
