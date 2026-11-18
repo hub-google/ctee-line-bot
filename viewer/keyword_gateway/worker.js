@@ -79,6 +79,74 @@ async function getRecords(env) {
   } while (cursor && loops < 10);
   return records.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)));
 }
+
+const GITHUB_KEYWORDS_URL = "https://api.github.com/repos/hub-google/ctee-line-bot/contents/keywords.txt";
+class GitHubWriteError extends Error {
+  constructor(message,status=502){super(message);this.status=status}
+}
+function decodeGitHubFile(base64) {
+  const binary=atob(base64.replace(/\s/g,""));
+  return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)));
+}
+function encodeGitHubFile(text) {
+  const bytes=new TextEncoder().encode(text);
+  let binary="";
+  for(const byte of bytes) binary+=String.fromCharCode(byte);
+  return btoa(binary);
+}
+async function githubKeywords(env,method="GET",body) {
+  const headers={
+    "Authorization":"Bearer "+env.GITHUB_WRITE_TOKEN,
+    "Accept":"application/vnd.github+json",
+    "X-GitHub-Api-Version":"2022-11-28",
+    "User-Agent":"ctee-keyword-inbox"
+  };
+  if(body)headers["Content-Type"]="application/json";
+  const res=await fetch(GITHUB_KEYWORDS_URL+(method==="GET"?"?ref=master":""),{
+    method,headers,body:body?JSON.stringify(body):undefined,
+    signal:AbortSignal.timeout(15000),cache:"no-store"
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok){
+    if(res.status===409||res.status===422)throw new GitHubWriteError("GitHub 關鍵字清單版本衝突，請重試",res.status);
+    if(res.status===401||res.status===403)throw new GitHubWriteError("GitHub 授權失效或權限不足，這項尚未核准",503);
+    throw new GitHubWriteError("GitHub 寫入失敗（HTTP "+res.status+"），這項尚未核准",502);
+  }
+  return data;
+}
+async function writeKeywordNow(env,record) {
+  if(!env.GITHUB_WRITE_TOKEN)throw new GitHubWriteError(
+    "GitHub 即時寫入授權尚未設定，這項尚未核准",503);
+  for(let attempt=0;attempt<3;attempt++){
+    const current=await githubKeywords(env);
+    if(typeof current.content!=="string"||typeof current.sha!=="string")
+      throw new GitHubWriteError("無法確認 GitHub keywords.txt 版本",502);
+    const words=decodeGitHubFile(current.content).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    if(words.length===0)throw new GitHubWriteError("GitHub 清單為空，拒絕修改",502);
+    const exists=words.includes(record.keyword);
+    let updated=words;
+    if(record.operation==="add"&&!exists)updated=[...words,record.keyword];
+    if(record.operation==="remove"&&exists)updated=words.filter(x=>x!==record.keyword);
+    if(!updated.length)throw new GitHubWriteError("不可刪除最後一個關鍵字",400);
+    if(updated.length===words.length) return {keywords:words,commit:null,alreadyApplied:true};
+    try {
+      const result=await githubKeywords(env,"PUT",{
+        message:"keywords: approve "+record.operation+" "+record.keyword+" (website review "+record.id+")",
+        content:encodeGitHubFile(updated.join("\n")+"\n"),
+        sha:current.sha,
+        branch:"master"
+      });
+      if(!result.commit?.sha||!result.content?.sha)
+        throw new GitHubWriteError("GitHub 未確認更新成功，請檢查紀錄",502);
+      return {keywords:updated,commit:result.commit.sha,alreadyApplied:false};
+    }catch(e){
+      if(e instanceof GitHubWriteError&&(e.status===409||e.status===422)&&attempt<2)continue;
+      throw e;
+    }
+  }
+  throw new GitHubWriteError("GitHub 檔案版本持續衝突，請重試",409);
+}
+
 async function parseBody(request) {
   if (Number(request.headers.get("content-length") || "0") > MAX_BODY) throw Error("申請內容過長");
   const text = await request.text();
@@ -101,7 +169,7 @@ export default {
     const {pathname} = new URL(request.url);
     try {
       if (pathname === "/health" && request.method === "GET")
-        return response({ok:true,service:"ctee-keyword-inbox",configured:!!env.CTEE_ADMIN_PIN});
+        return response({ok:true,service:"ctee-keyword-inbox",configured:!!env.CTEE_ADMIN_PIN,git_ready:!!env.GITHUB_WRITE_TOKEN});
       if (pathname === "/export" && request.method === "GET") {
         const items = await getRecords(env);
         return response({ok:true,items:items.filter(x=>x.status==="approved"||x.status==="rejected")
@@ -154,14 +222,21 @@ export default {
         const current=await env.INBOX.get(key,"json");
         if(!current) return response({error:"查無申請"},404);
         if(current.status!== "pending") return response({error:"這項已審核，不能重複更改"},409);
+        // Write GitHub first and only then mark the individual approval successful.
+        // No polling, scheduled job, or optimistic "approved" state is involved.
+        const applied=data.decision==="approved"?await writeKeywordNow(env,current):null;
         const updated={...current,status:data.decision,reviewed_at:new Date().toISOString()};
         await env.INBOX.put(key,JSON.stringify(updated));
-        return response({ok:true,item:updated,notice:data.decision==="approved"?"已核准，等待 GitHub 排程寫入":"已駁回"});
+        return response({
+          ok:true,item:updated,synced:data.decision==="approved",
+          keywords:applied?.keywords||null,commit:applied?.commit||null
+        });
       }
       return response({error:"無效路徑"},404);
     } catch(e) {
       console.error("CTEE keyword gateway",e instanceof Error?e.name:"unknown");
       if (e instanceof SyntaxError) return response({error:"資料格式不合法"},400);
+      if (e instanceof GitHubWriteError) return response({error:e.message},e.status);
       return response({error:"服務處理失敗，請稍後重試"},500);
     }
   }
