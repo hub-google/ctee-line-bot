@@ -390,8 +390,8 @@ async def run_worker():
         await page.goto(target_url, wait_until="domcontentloaded")
         dated_page = await page.content()
         await page.goto(BASE_URL)
-        links = set(re.findall(r'/cm/\\d+/[a-zA-Z0-9]+',
-                               dated_page + "\\n" + await page.content(), re.IGNORECASE))
+        links = set(re.findall(r'/cm/\d+/[a-zA-Z0-9]+',
+                               dated_page + "\n" + await page.content(), re.IGNORECASE))
         if date_override:
             # Use the existing published archive only to discover 11/18 section
             # URLs. Every clipping is still fetched anew from the source site.
@@ -402,7 +402,7 @@ async def run_worker():
                 old_manifest.raise_for_status()
                 for old_item in old_manifest.json().get("images", []):
                     article_url = old_item.get("article_url", "")
-                    match = re.search(r'https://readers\\.ctee\\.com\\.tw(/cm/\\d+/[a-zA-Z0-9]+)', article_url)
+                    match = re.search(r'https://readers\.ctee\.com\.tw(/cm/\d+/[a-zA-Z0-9]+)', article_url)
                     if match and target_date in match.group(1):
                         links.add(match.group(1))
             except (requests.RequestException, ValueError) as exc:
