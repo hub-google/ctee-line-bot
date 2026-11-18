@@ -1,4 +1,4 @@
-"""Verify the published dated gallery before pushing one official LINE Flex card.
+"""Verify the published dated gallery before pushing the official daily LINE Flex card.
 
 A registered LIFF_ID is optional. A Flex message is the chat card; a LIFF URL
 is a separately registered web-app entrypoint. Never invent a LIFF ID.
@@ -85,7 +85,7 @@ message = {
             "paddingTop": "18px", "paddingBottom": "18px", "paddingStart": "20px", "paddingEnd": "20px",
             "contents": [
                 {"type": "text", "text": "工商時報", "size": "xl", "weight": "bold", "color": "#FFFFFF"},
-                {"type": "text", "text": "每日新聞剪報  |  閱讀器測試", "size": "xs", "color": "#C3DFD5", "margin": "xs"}
+                {"type": "text", "text": "每日新聞剪報  |  原圖典藏", "size": "xs", "color": "#C3DFD5", "margin": "xs"}
             ]
         },
         "body": {
@@ -121,4 +121,4 @@ response = session.post(
 )
 if response.status_code != 200:
     raise RuntimeError(f"LINE Flex push rejected: HTTP {response.status_code} {response.text[:1000]}")
-print(f"[LINE] Formal Flex preview accepted: HTTP {response.status_code}", flush=True)
+print(f"[LINE] Daily HQ Flex push accepted: HTTP {response.status_code}", flush=True)
