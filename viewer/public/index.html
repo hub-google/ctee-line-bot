@@ -154,7 +154,7 @@ function downloadAllClippings(){
       return;
     }
   }catch(err){console.warn('LINE 外部下載無法啟動，改用瀏覽器連結',err);}
-  if(/\\bLine\\/[0-9]/i.test(navigator.userAgent)){
+  if(navigator.userAgent.toLowerCase().includes('line/')){
     location.assign(externalUrl.href);
     return;
   }
