@@ -294,6 +294,20 @@ q("#reviewTabs").onclick=e=>{
   const btn=e.target.closest("button[data-status]");
   if(btn){reviewTab=btn.dataset.status;renderReviews()}
 };
+// Only poll while the administrator is viewing approved items that have not yet
+// appeared in the authoritative GitHub keywords.txt file. Do not show "已生效" early.
+let refreshInProgress=false;
+window.setInterval(async()=>{
+  if(refreshInProgress||busy||q("#adminDashboard").classList.contains("hidden"))return;
+  const waiting=records.some(item=>item.status==="approved" &&
+    (item.operation==="add"?!words.includes(item.keyword):words.includes(item.keyword)));
+  if(!waiting)return;
+  refreshInProgress=true;
+  try{
+    await loadWords();
+    renderReviews();
+  }finally{refreshInProgress=false}
+},20000);
 newRow();loadWords();
 </script>
 </body></html>
