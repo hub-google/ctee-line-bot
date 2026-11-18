@@ -50,7 +50,7 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 </style>
 </head>
 <body>
-<header><div class="head"><a href="./" class="brand">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a><a href="https://github.com/hub-google/ctee-line-bot/issues?q=is%3Aissue+is%3Aopen" target="_blank" rel="noopener noreferrer" class="ghost">管理者專區（GitHub）</a></div></div></header>
+<header><div class="head"><a href="./" class="brand">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a><button type="button" class="ghost" id="adminEntry">管理者專區</button></div></div></header>
 <main>
 <h1>調整追蹤關鍵字</h1>
 <p class="subtitle">追蹤清單直接來自 GitHub 的 keywords.txt。新增、刪除建議會建立 GitHub Issue，管理員審核後直接修改 GitHub 清單。</p>
@@ -73,6 +73,21 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 <button type="submit" class="btn blue full submit" style="margin-top:14px">前往 GitHub 送出申請</button>
 <p class="tip">GitHub 不允許匿名訪客直接寫入儲存庫，因此送出申請需要登入 GitHub。網頁不會儲存 GitHub Token，也不使用 Supabase 或其他資料庫。</p>
 </form>
+<section id="adminPanel" class="panel hidden">
+<div class="topline"><div><h2>關鍵字調整申請</h2><p class="help">直接在網站審核，核准後立即寫入 GitHub master/keywords.txt。</p></div><button type="button" class="btn gray" id="adminClose">關閉</button></div>
+<div id="adminLogin">
+<label for="adminPin">管理金鑰</label><input type="password" id="adminPin" autocomplete="off" inputmode="numeric" placeholder="輸入管理金鑰">
+<label for="githubToken">GitHub 寫入授權 Token</label><input type="password" id="githubToken" autocomplete="off" spellcheck="false" placeholder="GitHub fine-grained personal access token">
+<p class="tip">GitHub API 要求真正的寫入權限。Token 只保留在目前分頁的記憶體中，不儲存到網站或瀏覽器。建議僅授予本儲存庫 Contents: Read and write、Issues: Read and write 權限。</p>
+<button type="button" id="adminUnlock" class="btn blue full">進入審核管理</button>
+</div>
+<div id="adminDashboard" class="hidden">
+<div class="admin-head"><div class="tabs" id="reviewTabs"><button data-status="pending" class="active" type="button">待審核</button><button data-status="approved" type="button">已核准</button><button data-status="rejected" type="button">已駁回</button></div><button type="button" id="adminRefresh" class="btn gray">重新整理</button><button type="button" id="adminLogout" class="btn gray">登出</button></div>
+<div class="summary" id="reviewSummary">正在取得 GitHub 申請…</div>
+<div id="reviewList"></div>
+</div>
+<div id="adminNotice" role="status" aria-live="polite"></div>
+</section>
 <section class="panel">
 <div class="topline"><div><h2>已送出的申請</h2><p class="help">申請與核准紀錄保留在 GitHub Issues；無需登入即可查閱公開內容。</p></div><a class="btn gray" href="https://github.com/hub-google/ctee-line-bot/issues" target="_blank" rel="noopener noreferrer">查看全部</a></div>
 <div id="issueList" class="chips"><span class="tip">讀取 GitHub 紀錄中…</span></div>
@@ -151,6 +166,176 @@ async function loadIssues(){
     }
   }catch(err){q("#issueList").replaceChildren(node("span","tip","無法載入 GitHub 申請紀錄，可按「查看全部」開啟。"));}
 }
+
+let adminToken="";
+let reviewItems=[];
+let reviewTab="pending";
+let reviewing=false;
+const toggleAdmin=visible=>{
+  q("#adminPanel").classList.toggle("hidden",!visible);
+  if(visible)q("#adminPanel").scrollIntoView({behavior:"smooth",block:"start"});
+};
+q("#adminEntry").onclick=()=>toggleAdmin(q("#adminPanel").classList.contains("hidden"));
+q("#adminClose").onclick=()=>toggleAdmin(false);
+const notice=(text,success=false)=>{
+  const n=q("#adminNotice");n.replaceChildren();
+  if(text)n.append(node("div","alert "+(success?"success":"error"),text));
+};
+function decodeContent(encoded){
+  const binary=atob(encoded.replace(/\s/g,""));
+  return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)));
+}
+function encodeContent(text){
+  const bytes=new TextEncoder().encode(text);
+  let binary="";
+  for(const byte of bytes)binary+=String.fromCharCode(byte);
+  return btoa(binary);
+}
+async function adminApi(path,method="GET",body){
+  if(!adminToken)throw Error("請先進行 GitHub 寫入授權");
+  const resp=await fetch("https://api.github.com/repos/"+REPO+path,{
+    method,
+    headers:{
+      "Authorization":"Bearer "+adminToken,
+      "Accept":"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28",
+      "Content-Type":"application/json"
+    },
+    body:body===undefined?undefined:JSON.stringify(body),
+    cache:"no-store"
+  });
+  const data=await resp.json().catch(()=>({}));
+  if(!resp.ok)throw Error("GitHub API HTTP "+resp.status+"："+(data.message||"操作失敗"));
+  return data;
+}
+function parseSuggestion(body){
+  if(typeof body!=="string"||body.length>10000)throw Error("申請內容格式錯誤");
+  const sections={};let current="";
+  for(const line of body.split(/\r?\n/)){
+    if(line.startsWith("## ")){current=line.slice(3).trim();sections[current]=[]}
+    else if(current)sections[current].push(line.trim());
+  }
+  function wordsIn(key){
+    const terms=[];
+    for(const line of sections[key]||[]){
+      if(!line||line==="（無）")continue;
+      if(!line.startsWith("- "))throw Error("申請格式錯誤："+key);
+      const term=line.slice(2).normalize("NFKC").trim();
+      if(!term||term.length>40||/[\r\n<>]/.test(term)||terms.includes(term))throw Error("無效或重複關鍵字");
+      terms.push(term);
+    }
+    return terms;
+  }
+  const add=wordsIn("新增關鍵字"),remove=wordsIn("移除關鍵字");
+  if(!add.length&&!remove.length)throw Error("申請沒有關鍵字變更");
+  if(add.length+remove.length>20||add.some(x=>remove.includes(x)))throw Error("申請項目衝突或過多");
+  return {name:(sections["申請人"]||[]).join("").trim(),add,remove,reason:(sections["建議原因"]||[]).join(" ").trim()};
+}
+function statusOf(item){
+  return item.state==="open"?"pending":item.state_reason==="not_planned"?"rejected":"approved";
+}
+function renderReviewList(){
+  const root=q("#reviewList");root.replaceChildren();
+  const counts={pending:0,approved:0,rejected:0};
+  for(const item of reviewItems)counts[statusOf(item)]++;
+  q("#reviewSummary").textContent="待審核 "+counts.pending+" 筆｜已核准 "+counts.approved+" 筆｜已駁回 "+counts.rejected+" 筆";
+  for(const button of q("#reviewTabs").querySelectorAll("button")){
+    button.classList.toggle("active",button.dataset.status===reviewTab);
+  }
+  const filtered=reviewItems.filter(item=>statusOf(item)===reviewTab);
+  if(!filtered.length){root.append(node("p","tip","目前沒有這個狀態的申請。"));return;}
+  for(const item of filtered){
+    const card=node("article","review");
+    const top=node("div","review-top"),title=node("strong","",item.title.replace("[關鍵字申請] ",""));
+    const time=node("time","",new Date(item.created_at).toLocaleString("zh-TW"));
+    top.append(title,time);card.append(top);
+    try{
+      const details=parseSuggestion(item.body);
+      const tags=node("div","review-words");
+      for(const word of details.add)tags.append(node("span","word add","＋ "+word));
+      for(const word of details.remove)tags.append(node("span","word remove","－ "+word));
+      card.append(tags);
+      const meta=node("p","reason","申請人："+details.name+(details.reason?"｜原因："+details.reason:""));
+      card.append(meta);
+    }catch(err){card.append(node("p","reason","申請內容需人工檢查："+err.message))}
+    const actions=node("div","review-actions");
+    const link=node("a","btn gray","查看 GitHub 原始申請");
+    link.href=item.html_url;link.target="_blank";link.rel="noopener noreferrer";actions.append(link);
+    if(reviewTab==="pending"){
+      const approve=node("button","btn blue","核准並更新 keywords.txt");
+      const reject=node("button","btn red","駁回");
+      approve.type=reject.type="button";
+      approve.onclick=()=>reviewIssue(item,"approved");
+      reject.onclick=()=>reviewIssue(item,"rejected");
+      actions.append(approve,reject);
+    }
+    card.append(actions);root.append(card);
+  }
+}
+async function refreshAdmin(){
+  if(!adminToken)return;
+  const data=await adminApi("/issues?state=all&per_page=100");
+  reviewItems=data.filter(item=>!item.pull_request&&item.title.startsWith("[關鍵字申請] "));
+  renderReviewList();
+}
+q("#adminUnlock").onclick=async()=>{
+  if(q("#adminPin").value.trim()!=="9"){notice("管理金鑰不正確");return}
+  const token=q("#githubToken").value.trim();
+  if(!token){notice("GitHub 寫入授權 Token 不可空白");return}
+  adminToken=token;q("#githubToken").value="";
+  try{
+    await adminApi("/contents/keywords.txt?ref=master");
+    await refreshAdmin();
+    q("#adminLogin").classList.add("hidden");
+    q("#adminDashboard").classList.remove("hidden");
+    notice("已連線 GitHub。核准時會直接修改 keywords.txt。",true);
+  }catch(err){adminToken="";notice(err.message)}
+};
+q("#adminLogout").onclick=()=>{
+  adminToken="";reviewItems=[];q("#adminPin").value="";
+  q("#adminDashboard").classList.add("hidden");q("#adminLogin").classList.remove("hidden");
+  notice("已登出，授權 Token 已從頁面記憶體中清除。",true);
+};
+q("#adminRefresh").onclick=()=>refreshAdmin().then(()=>notice("申請清單已更新",true)).catch(err=>notice(err.message));
+q("#reviewTabs").onclick=e=>{
+  const btn=e.target.closest("button[data-status]");
+  if(btn){reviewTab=btn.dataset.status;renderReviewList()}
+};
+async function reviewIssue(item,decision){
+  if(reviewing)return;
+  if(!confirm(decision==="approved"?"確定核准？將立即更新 GitHub keywords.txt。":"確定駁回這筆申請？"))return;
+  reviewing=true;notice("");
+  const controls=[...q("#reviewList").querySelectorAll("button")];controls.forEach(button=>button.disabled=true);
+  try{
+    if(decision==="approved"){
+      const details=parseSuggestion(item.body);
+      const content=await adminApi("/contents/keywords.txt?ref=master");
+      if(typeof content.content!=="string"||!content.sha)throw Error("無法讀取 GitHub 目前的關鍵字版本");
+      const current=decodeContent(content.content).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      const known=new Set(current);
+      if(details.add.some(x=>known.has(x)))throw Error("新增關鍵字已存在，請重新檢查申請");
+      if(details.remove.some(x=>!known.has(x)))throw Error("刪除關鍵字已不存在，請重新檢查申請");
+      const latest=current.filter(x=>!details.remove.includes(x)).concat(details.add);
+      if(!latest.length)throw Error("不可清空全部關鍵字");
+      await adminApi("/contents/keywords.txt","PUT",{
+        message:"keywords: approve issue #"+item.number,
+        content:encodeContent(latest.join("\n")+"\n"),
+        sha:content.sha,
+        branch:"master"
+      });
+      await loadWords();
+      notice("已核准並提交 GitHub：keywords.txt 已更新為 "+latest.length+" 個關鍵字。",true);
+    }else{
+      notice("申請已駁回，不修改 keywords.txt。",true);
+    }
+    await adminApi("/issues/"+item.number,"PATCH",{
+      state:"closed",state_reason:decision==="approved"?"completed":"not_planned"
+    });
+    await refreshAdmin();
+  }catch(err){notice("審核未完整完成："+err.message+"。請確認 GitHub 關鍵字與 Issue 狀態後再操作。")}
+  finally{reviewing=false;controls.forEach(button=>button.disabled=false)}
+}
+
 newRow();loadWords();loadIssues();
 </script>
 </body></html>
