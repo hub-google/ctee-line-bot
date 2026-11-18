@@ -46,7 +46,15 @@ jobs:
           import os
           import re
           from pathlib import Path
-          value = os.environ.get("LIFF_ID", "").strip()
+          config_path = Path("viewer/public/liff-config.js")
+          public_id = ""
+          if config_path.exists():
+              raw = config_path.read_text(encoding="utf-8").strip()
+              prefix = "window.CTEE_LIFF_ID = "
+              if not raw.startswith(prefix) or not raw.endswith(";"):
+                  raise SystemExit("Invalid public LIFF config file")
+              public_id = json.loads(raw[len(prefix):-1]).strip()
+          value = public_id or os.environ.get("LIFF_ID", "").strip()
           if value and not re.fullmatch(r"[A-Za-z0-9_-]+", value):
               raise SystemExit("Invalid LIFF_ID format")
           Path("viewer/public/liff-config.js").write_text(
