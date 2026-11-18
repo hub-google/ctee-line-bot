@@ -5,11 +5,6 @@ on:
     # Daily 06:00 Asia/Taipei (GitHub scheduled runs may be delayed)
     - cron: '0 22 * * *'
   workflow_dispatch:
-  push:
-    # One-time switch smoke test; remove this trigger after it starts.
-    branches: [master]
-    paths:
-      - '.github/workflows/daily_ctee.yml'
 
 permissions:
   contents: write
@@ -83,5 +78,4 @@ jobs:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           LIFF_ID: ${{ secrets.LIFF_ID }}
-          LINE_VALIDATE_ONLY: ${{ github.event_name == 'push' && '1' || '0' }}
         run: python viewer/send_preview.py
