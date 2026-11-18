@@ -1,6 +1,10 @@
 name: CTEE Viewer (independent archive and preview)
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/viewer_preview.yml'
   workflow_dispatch:
   schedule:
     # Daily archive at 06:30 Asia/Taipei. Old LINE/Rentry workflow unchanged.
