@@ -62,7 +62,7 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 </section>
 <section class="panel">
 <div class="topline"><div class="titlewrap"><span class="iconbox red">－</span><div><h2>刪除關鍵字</h2><p class="help">點選目前 GitHub 清單中的字詞</p></div></div><span id="selectedCount" class="small-count">已選 0 個</span></div>
-<div class="keyword-tools"><input id="wordSearch" type="text" placeholder="搜尋追蹤中的關鍵字" aria-label="搜尋關鍵字"><span id="allCount" class="counter">載入中</span></div>
+<div class="keyword-tools"><input id="wordSearch" type="search" name="ctee_keyword_text_filter" autocomplete="off" autocapitalize="none" spellcheck="false" readonly placeholder="搜尋追蹤中的關鍵字" aria-label="搜尋關鍵字"><span id="allCount" class="counter">載入中</span></div>
 <div id="keywordChips" class="chips" aria-live="polite"></div>
 </section>
 <form id="suggestionForm" class="panel">
@@ -138,7 +138,23 @@ async function loadWords(){
   }catch(err){q("#allCount").textContent="讀取失敗";q("#keywordChips").replaceChildren(node("div","alert error","無法從 GitHub 載入關鍵字："+err.message));}
 }
 q("#addRowButton").onclick=()=>newRow().focus();
-q("#wordSearch").addEventListener("input",renderWords);
+const keywordFilter=q("#wordSearch");
+let keywordFilterActive=false;
+function activateKeywordFilter(){
+  if(keywordFilterActive)return;
+  keywordFilterActive=true;
+  keywordFilter.readOnly=false;
+  keywordFilter.value="";
+  renderWords();
+}
+keywordFilter.value="";
+keywordFilter.addEventListener("pointerdown",activateKeywordFilter);
+keywordFilter.addEventListener("focus",activateKeywordFilter);
+keywordFilter.addEventListener("keydown",activateKeywordFilter);
+window.addEventListener("pageshow",()=>{
+  if(!keywordFilterActive){keywordFilter.value="";renderWords();}
+});
+keywordFilter.addEventListener("input",renderWords);
 
 const SUGGESTION_GATEWAY=String(window.CTEE_KEYWORD_API_URL||"").trim();
 q("#suggestionForm").addEventListener("submit",async e=>{
