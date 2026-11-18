@@ -67,24 +67,26 @@ normal_url = site + "?date=" + quote(date, safe="")
 # outgoing card and the browser share the same LIFF app, without a GitHub secret.
 config_response = session.get(urljoin(site, "liff-config.js"), timeout=15)
 config_response.raise_for_status()
-config_text = config_response.text.strip()
-prefix = "window.CTEE_LIFF_ID = "
-if not config_text.startswith(prefix) or not config_text.endswith(";"):
-    raise RuntimeError("Published LIFF config is invalid")
-liff_id = json.loads(config_text[len(prefix):-1]).strip()
-if liff_id and not re.fullmatch(r"[A-Za-z0-9_-]+", liff_id):
-    raise RuntimeError("Published LIFF ID has invalid characters")
-if liff_id:
-    reader_url = "https://liff.line.me/" + liff_id + "?date=" + quote(date, safe="")
-    print("[LINE] Verified configured LIFF app entrypoint", flush=True)
-else:
-    reader_url = normal_url
-    print("[LINE] LIFF app not registered: card links to reader without LIFF sharing", flush=True)
-zip_url = urljoin(site, data["zip"])
-# LINE Flex's URI action opens our LIFF reader in share mode. The LIFF
-# reader invokes shareTargetPicker([Flex]) directly after initialization.
-# A shared Flex card opens the same dated LIFF reader for the recipient.
-share_link = reader_url + "&share=1" if liff_id else reader_url
+config_text = config_response.text
+def published_liff_id(name):
+    # Both identifiers are PUBLIC; the LINE access token remains in GitHub Secrets.
+    match = re.search(r'^window\\.' + re.escape(name) + r'\\s*=\\s*("[^"]+")\\s*;\\s*$', config_text, re.M)
+    if not match:
+        raise RuntimeError("Missing LIFF public config: " + name)
+    value = json.loads(match.group(1))
+    if not re.fullmatch(r"2012346974-[A-Za-z0-9]+", value):
+        raise RuntimeError("Invalid published LIFF ID: " + name)
+    return value
+
+liff_id = published_liff_id("CTEE_LIFF_ID")
+share_liff_id = published_liff_id("CTEE_SHARE_LIFF_ID")
+if share_liff_id == liff_id:
+    raise RuntimeError("Share LIFF must not reuse full reader")
+reader_url = "https://liff.line.me/" + liff_id + "?date=" + quote(date, safe="")
+# The first tap runs the small, dedicated LIFF app, not the full reader.
+share_link = ("https://liff.line.me/" + share_liff_id +
+              "?date=" + quote(date, safe="") + "&count=" + str(count))
+print("[LINE] Verified distinct reader and fast-share LIFF entrypoints", flush=True)
 keyword_url = "https://hub-google.github.io/ctee-line-bot/keywords.html"
 
 message = {
