@@ -47,6 +47,7 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 .tabs{display:flex;gap:5px;padding:5px;background:#f2f4f7;border-radius:12px;margin-bottom:14px}.tabs button{flex:1;padding:10px 5px;border:none;background:transparent;border-radius:9px;font-size:12px;color:#728092;font-weight:700}.tabs button.active{color:var(--ink);background:#fff;box-shadow:0 2px 7px #21364e13}
 #busy{position:fixed;top:78px;right:16px;padding:10px 14px;background:#202f44;color:#fff;border-radius:12px;z-index:50;font-size:12px;box-shadow:0 5px 20px #0002}
 @media(max-width:540px){main{padding:22px 12px 64px}.panel{padding:18px 15px;border-radius:15px}.head{padding:12px 14px}.head .ghost{padding:8px 9px}.keyword-tools{align-items:stretch}.keyword-tools input{width:100%;max-width:none}.counter{align-self:center}.titlewrap{gap:10px}.iconbox{width:36px;height:36px}.review{padding:13px}.stats{gap:7px}}
+.keyword-review-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--border)}.keyword-review-row>.word{margin-right:auto;font-size:14px;padding:7px 11px}.keyword-review-row .btn{min-width:65px}
 </style>
 </head>
 <body>
@@ -74,7 +75,7 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 <p class="tip">GitHub 不允許匿名訪客直接寫入儲存庫，因此送出申請需要登入 GitHub。網頁不會儲存 GitHub Token，也不使用 Supabase 或其他資料庫。</p>
 </form>
 <section id="adminPanel" class="panel hidden">
-<div class="topline"><div><h2>關鍵字調整申請</h2><p class="help">直接在網站審核，核准後立即寫入 GitHub master/keywords.txt。</p></div><button type="button" class="btn gray" id="adminClose">關閉</button></div>
+<div class="topline"><div><h2>關鍵字調整申請</h2><p class="help">每個新增、刪除關鍵字都可單獨核准或駁回，核准後寫入 GitHub keywords.txt。</p></div><button type="button" class="btn gray" id="adminClose">關閉</button></div>
 <div id="adminLogin">
 <label for="adminPin">管理金鑰</label><input type="password" id="adminPin" autocomplete="off" inputmode="numeric" placeholder="輸入管理金鑰">
 <label for="githubToken">GitHub 寫入授權 Token</label><input type="password" id="githubToken" autocomplete="off" spellcheck="false" placeholder="GitHub fine-grained personal access token">
@@ -231,51 +232,88 @@ function parseSuggestion(body){
   if(add.length+remove.length>20||add.some(x=>remove.includes(x)))throw Error("申請項目衝突或過多");
   return {name:(sections["申請人"]||[]).join("").trim(),add,remove,reason:(sections["建議原因"]||[]).join(" ").trim()};
 }
-function statusOf(item){
-  return item.state==="open"?"pending":item.state_reason==="not_planned"?"rejected":"approved";
+
+const REVIEW_TAG="CTEE_ITEM_DECISION_V1:";
+const reviewRecords=[];
+function reviewKey(kind,word){return kind+":"+word}
+function parseDecisionComment(text){
+  if(typeof text!=="string"||!text.startsWith(REVIEW_TAG))return null;
+  try{
+    const obj=JSON.parse(text.slice(REVIEW_TAG.length).trim());
+    if(!["add","remove"].includes(obj.kind)||!["approved","rejected"].includes(obj.decision)||
+       typeof obj.word!=="string"||obj.word.length>40)return null;
+    return obj;
+  }catch(_){return null}
 }
 function renderReviewList(){
   const root=q("#reviewList");root.replaceChildren();
   const counts={pending:0,approved:0,rejected:0};
-  for(const item of reviewItems)counts[statusOf(item)]++;
-  q("#reviewSummary").textContent="待審核 "+counts.pending+" 筆｜已核准 "+counts.approved+" 筆｜已駁回 "+counts.rejected+" 筆";
+  for(const record of reviewRecords)counts[record.decision]++;
+  q("#reviewSummary").textContent="待審核 "+counts.pending+" 個｜已核准 "+counts.approved+" 個｜已駁回 "+counts.rejected+" 個";
   for(const button of q("#reviewTabs").querySelectorAll("button")){
     button.classList.toggle("active",button.dataset.status===reviewTab);
   }
-  const filtered=reviewItems.filter(item=>statusOf(item)===reviewTab);
-  if(!filtered.length){root.append(node("p","tip","目前沒有這個狀態的申請。"));return;}
-  for(const item of filtered){
+  const filtered=reviewRecords.filter(record=>record.decision===reviewTab);
+  if(!filtered.length){root.append(node("p","tip","目前沒有這個狀態的關鍵字。"));return;}
+  const grouped=new Map();
+  for(const record of filtered){
+    const no=record.issue.number;
+    if(!grouped.has(no))grouped.set(no,[]);
+    grouped.get(no).push(record);
+  }
+  for(const records of grouped.values()){
+    const issue=records[0].issue;
     const card=node("article","review");
-    const top=node("div","review-top"),title=node("strong","",item.title.replace("[關鍵字申請] ",""));
-    const time=node("time","",new Date(item.created_at).toLocaleString("zh-TW"));
-    top.append(title,time);card.append(top);
-    try{
-      const details=parseSuggestion(item.body);
-      const tags=node("div","review-words");
-      for(const word of details.add)tags.append(node("span","word add","＋ "+word));
-      for(const word of details.remove)tags.append(node("span","word remove","－ "+word));
-      card.append(tags);
-      const meta=node("p","reason","申請人："+details.name+(details.reason?"｜原因："+details.reason:""));
-      card.append(meta);
-    }catch(err){card.append(node("p","reason","申請內容需人工檢查："+err.message))}
-    const actions=node("div","review-actions");
-    const link=node("a","btn gray","查看 GitHub 原始申請");
-    link.href=item.html_url;link.target="_blank";link.rel="noopener noreferrer";actions.append(link);
-    if(reviewTab==="pending"){
-      const approve=node("button","btn blue","核准並更新 keywords.txt");
-      const reject=node("button","btn red","駁回");
-      approve.type=reject.type="button";
-      approve.onclick=()=>reviewIssue(item,"approved");
-      reject.onclick=()=>reviewIssue(item,"rejected");
-      actions.append(approve,reject);
+    const top=node("div","review-top");
+    top.append(node("strong","",issue.title.replace("[關鍵字申請] ","")),
+      node("time","",new Date(issue.created_at).toLocaleString("zh-TW")));
+    card.append(top);
+    const applicant=node("p","reason","申請人："+records[0].applicant+
+      (records[0].reason?"｜原因："+records[0].reason:""));
+    card.append(applicant);
+    for(const record of records){
+      const row=node("div","keyword-review-row");
+      row.append(node("span","word "+(record.kind==="add"?"add":"remove"),
+        (record.kind==="add"?"＋ 新增 ":"－ 移除 ")+record.word));
+      if(record.decision==="pending"){
+        const approve=node("button","btn blue","核准");
+        const reject=node("button","btn red","駁回");
+        approve.type=reject.type="button";
+        approve.onclick=()=>reviewKeyword(record,"approved");
+        reject.onclick=()=>reviewKeyword(record,"rejected");
+        row.append(approve,reject);
+      }else{
+        row.append(node("span","tag "+(record.decision==="approved"?"approved":"rejected"),
+          record.decision==="approved"?"已核准":"已駁回"));
+      }
+      card.append(row);
     }
-    card.append(actions);root.append(card);
+    root.append(card);
   }
 }
 async function refreshAdmin(){
   if(!adminToken)return;
   const data=await adminApi("/issues?state=all&per_page=100");
   reviewItems=data.filter(item=>!item.pull_request&&item.title.startsWith("[關鍵字申請] "));
+  reviewRecords.splice(0,reviewRecords.length);
+  for(const issue of reviewItems){
+    let details;
+    try{details=parseSuggestion(issue.body)}catch(_){continue}
+    const comments=await adminApi("/issues/"+issue.number+"/comments?per_page=100");
+    const decisions=new Map();
+    for(const comment of comments){
+      if(!["OWNER","MEMBER","COLLABORATOR"].includes(comment.author_association))continue;
+      const decision=parseDecisionComment(comment.body);
+      if(decision)decisions.set(reviewKey(decision.kind,decision.word),decision.decision);
+    }
+    for(const [kind,items] of [["add",details.add],["remove",details.remove]]){
+      for(const word of items){
+        const decision=decisions.get(reviewKey(kind,word))||
+          (issue.state==="closed"?(issue.state_reason==="not_planned"?"rejected":"approved"):"pending");
+        reviewRecords.push({issue,kind,word,decision,applicant:details.name,reason:details.reason});
+      }
+    }
+  }
   renderReviewList();
 }
 q("#adminUnlock").onclick=async()=>{
@@ -301,24 +339,26 @@ q("#reviewTabs").onclick=e=>{
   const btn=e.target.closest("button[data-status]");
   if(btn){reviewTab=btn.dataset.status;renderReviewList()}
 };
-async function reviewIssue(item,decision){
-  if(reviewing)return;
-  if(!confirm(decision==="approved"?"確定核准？將立即更新 GitHub keywords.txt。":"確定駁回這筆申請？"))return;
+async function reviewKeyword(record,decision){
+  if(reviewing||record.decision!=="pending")return;
+  const kindLabel=record.kind==="add"?"新增":"移除";
+  if(!confirm("確定"+(decision==="approved"?"核准":"駁回")+"「"+kindLabel+" "+record.word+"」？只處理這一個關鍵字。"))return;
   reviewing=true;notice("");
-  const controls=[...q("#reviewList").querySelectorAll("button")];controls.forEach(button=>button.disabled=true);
+  const controls=[...q("#reviewList").querySelectorAll("button")];
+  controls.forEach(button=>button.disabled=true);
   try{
     if(decision==="approved"){
-      const details=parseSuggestion(item.body);
       const content=await adminApi("/contents/keywords.txt?ref=master");
-      if(typeof content.content!=="string"||!content.sha)throw Error("無法讀取 GitHub 目前的關鍵字版本");
+      if(typeof content.content!=="string"||!content.sha)throw Error("GitHub 關鍵字版本讀取失敗");
       const current=decodeContent(content.content).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
       const known=new Set(current);
-      if(details.add.some(x=>known.has(x)))throw Error("新增關鍵字已存在，請重新檢查申請");
-      if(details.remove.some(x=>!known.has(x)))throw Error("刪除關鍵字已不存在，請重新檢查申請");
-      const latest=current.filter(x=>!details.remove.includes(x)).concat(details.add);
-      if(!latest.length)throw Error("不可清空全部關鍵字");
+      if(record.kind==="add"&&known.has(record.word))throw Error("這個新增詞已經存在於清單，不能重複新增。");
+      if(record.kind==="remove"&&!known.has(record.word))throw Error("這個刪除詞已經不存在於清單，請重新核對。");
+      const latest=record.kind==="add"?
+        [...current,record.word]:current.filter(word=>word!==record.word);
+      if(!latest.length)throw Error("不能刪除最後一個關鍵字");
       await adminApi("/contents/keywords.txt","PUT",{
-        message:"keywords: approve issue #"+item.number,
+        message:"keywords: approve "+record.kind+" "+record.word+" from issue #"+record.issue.number,
         content:encodeContent(latest.join("\n")+"\n"),
         sha:content.sha,
         branch:"master"
@@ -326,16 +366,27 @@ async function reviewIssue(item,decision){
       words.splice(0,words.length,...latest);
       selected.clear();
       renderWords();
-      notice("已核准並提交 GitHub：keywords.txt 已更新為 "+latest.length+" 個關鍵字。",true);
-    }else{
-      notice("申請已駁回，不修改 keywords.txt。",true);
     }
-    await adminApi("/issues/"+item.number,"PATCH",{
-      state:"closed",state_reason:decision==="approved"?"completed":"not_planned"
+    // Persistent independent decision for this keyword, not the entire issue.
+    await adminApi("/issues/"+record.issue.number+"/comments","POST",{
+      body:REVIEW_TAG+JSON.stringify({kind:record.kind,word:record.word,decision})
     });
-    await refreshAdmin();
-  }catch(err){notice("審核未完整完成："+err.message+"。請確認 GitHub 關鍵字與 Issue 狀態後再操作。")}
-  finally{reviewing=false;controls.forEach(button=>button.disabled=false)}
+    record.decision=decision;
+    const remaining=reviewRecords.some(x=>x.issue.number===record.issue.number&&x.decision==="pending");
+    if(!remaining){
+      await adminApi("/issues/"+record.issue.number,"PATCH",{
+        state:"closed",
+        state_reason:reviewRecords.some(x=>x.issue.number===record.issue.number&&x.decision==="approved")?
+          "completed":"not_planned"
+      });
+    }
+    renderReviewList();
+    notice("「"+record.word+"」"+(decision==="approved"?"已核准並同步 GitHub keywords.txt":"已駁回，不會修改 keywords.txt")+"。其他關鍵字維持原狀。",true);
+  }catch(err){
+    notice("這一項未能完整審核："+err.message+"。如果檔案已修改但紀錄提交失敗，請先檢查 GitHub keywords.txt 後再重試。");
+  }finally{
+    reviewing=false;controls.forEach(button=>button.disabled=false);
+  }
 }
 
 newRow();loadWords();loadIssues();
