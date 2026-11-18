@@ -1,25 +1,28 @@
-name: Preview CTEE Viewer (manual)
+name: CTEE Viewer (independent archive and preview)
 
 on:
   workflow_dispatch:
+  schedule:
+    # Daily archive at 06:30 Asia/Taipei. Old LINE/Rentry workflow unchanged.
+    - cron: '30 22 * * *'
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 concurrency:
-  group: ctee-viewer-manual
-  cancel-in-progress: true
+  group: ctee-viewer-gallery
+  cancel-in-progress: false
 
 jobs:
-  viewer-preview:
+  viewer-archive:
     runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.publish.outputs.page_url }}
     steps:
-      - name: Checkout repository
+      - name: Checkout bot source
         uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -29,31 +32,46 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
           python -m playwright install --with-deps chromium
-      - name: Build gallery (old LINE push is disabled in this job)
+      - name: Capture original-quality newspaper images
         env:
           CTEE_USER: ${{ secrets.CTEE_USER }}
           CTEE_PASS: ${{ secrets.CTEE_PASS }}
-          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
         run: python viewer/build_preview.py
-      - name: Save preview as workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: viewer-static-preview
-          path: viewer/public/
-          retention-days: 3
-      - name: Configure GitHub Pages (requires Pages enabled in repository settings)
-        uses: actions/configure-pages@v5
-      - name: Upload Pages static files
+      - name: Merge new issue into persistent, separate archive branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin viewer-archive
+          git worktree add --detach /tmp/ctee-gallery-history origin/viewer-archive
+          mkdir -p /tmp/ctee-gallery-history/viewer/public/archive
+          issue_date=$(TZ=Asia/Taipei date +%F)
+          mkdir -p "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date"
+          rsync -a --delete "viewer/public/archive/$issue_date/" "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date/"
+          cp viewer/public/index.html viewer/public/data.json viewer/public/latest.zip viewer/public/robots.txt /tmp/ctee-gallery-history/viewer/public/
+          python viewer/update_history.py /tmp/ctee-gallery-history/viewer/public
+          cd /tmp/ctee-gallery-history
+          git add viewer/public
+          if git diff --cached --quiet; then
+            echo 'Archive unchanged.'
+          else
+            git commit -m "archive: preserve all newspaper issues through $issue_date"
+            git push origin HEAD:viewer-archive
+          fi
+      - name: Upload GitHub Pages archive
         uses: actions/upload-pages-artifact@v4
         with:
-          path: viewer/public/
-      - name: Deploy GitHub Pages
+          path: /tmp/ctee-gallery-history/viewer/public/
+      - name: Publish independent reader on GitHub Pages
         id: publish
         uses: actions/deploy-pages@v4
-      - name: Verify published site and push one LINE test
+      - name: Verify public gallery and send one LINE Flex preview
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
         env:
           SITE_URL: ${{ steps.publish.outputs.page_url }}
           EXPECTED_REF: ${{ github.sha }}
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LIFF_ID: ${{ secrets.LIFF_ID }}
         run: python viewer/send_preview.py
