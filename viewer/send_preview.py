@@ -14,7 +14,7 @@ error = "not yet checked"
 count = 0
 
 # GitHub Pages may need a short propagation delay after deploy-pages succeeds.
-for attempt in range(12):
+for attempt in range(48):
     try:
         html = session.get(site, timeout=15)
         html.raise_for_status()
@@ -23,6 +23,8 @@ for attempt in range(12):
         resp = session.get(urljoin(site, "data.json"), timeout=15, headers={"Cache-Control": "no-cache"})
         resp.raise_for_status()
         data = resp.json()
+        if data.get("build_ref") != os.environ.get("EXPECTED_REF"):
+            raise RuntimeError("站點仍是舊版本，等候 Cloudflare 自動部署")
         count = len(data["images"])
         if count < 1:
             raise RuntimeError("無有效剪報內容")
@@ -36,7 +38,7 @@ for attempt in range(12):
     except Exception as exc:
         error = str(exc)
         print(f"[viewer] Readiness attempt {attempt + 1} failed: {error}", flush=True)
-        if attempt < 11:
+        if attempt < 47:
             time.sleep(5)
 else:
     raise SystemExit("停止推播：新網站尚未可正常閱讀。最後錯誤：" + error)
