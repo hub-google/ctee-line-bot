@@ -49,9 +49,12 @@ jobs:
           page = Path("viewer/public/keywords.html").read_text(encoding="utf-8")
           crawler = Path("ctee_downloader_cloud.py").read_text(encoding="utf-8")
           assert "raw.githubusercontent.com" in page
-          assert "CTEE_KEYWORD_API_URL" in page
+          assert "https://ctee-keywords-inbox.ber-at.workers.dev" in page
           assert "location.assign(url.toString())" not in page
-          assert "reviewKeyword(record" in page
+          assert "id=\"wordSearch\"" in page and "readonly placeholder" in page
+          assert 'fetchJSON("/submit"' in page
+          assert 'fetchJSON("/review"' in page
+          assert "supabase.co" not in page
           assert "KEYWORDS_API_URL" not in crawler
           assert "supabase.co" not in page + crawler
           print("GitHub-only keyword UI + crawler validated")
