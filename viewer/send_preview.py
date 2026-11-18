@@ -24,7 +24,7 @@ for attempt in range(48):
         resp.raise_for_status()
         data = resp.json()
         if data.get("build_ref") != os.environ.get("EXPECTED_REF"):
-            raise RuntimeError("站點仍是舊版本，等候 Cloudflare 自動部署")
+            raise RuntimeError("站點仍是舊版本，等待 GitHub Pages 發布")
         count = len(data["images"])
         if count < 1:
             raise RuntimeError("無有效剪報內容")
