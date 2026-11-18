@@ -13,6 +13,8 @@ import json
 import os
 import sys
 import threading
+import tempfile
+import shutil
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -32,6 +34,7 @@ DATE_LABEL = NOW.strftime("%Y/%m/%d")
 ARCHIVE = PUBLIC / "archive" / DATE
 RAW = ARCHIVE / "images"
 RAW.mkdir(parents=True, exist_ok=True)
+STAGING = Path(tempfile.mkdtemp(prefix="ctee-originals-"))
 received_results = []
 uploaded = {}
 lock = threading.Lock()
@@ -52,7 +55,7 @@ def store_exact_source(image_bytes: bytes) -> str | None:
         filename = f"{digest[:24]}.{ext}"
         uri = "https://viewer.local/source/" + digest
         with lock:
-            path = RAW / filename
+            path = STAGING / filename
             if not path.exists():
                 path.write_bytes(image_bytes)
             uploaded[uri] = {"path": path, "width": width, "height": height, "sha256": digest}
@@ -91,12 +94,18 @@ def build_site():
                 continue
             index = len(manifest) + 1
             try:
-                # Only original image files are stored. No thumbnail JPEG copies.
-                # The dated ZIP is kept once for the existing one-click download feature.
-                bundle.write(path, arcname=f"{index:02d}_{path.name}")
+                # Preserve exact original image bytes, with readable 01.jpg, 02.jpg ... names.
+                # Source bytes are staged outside viewer/public, so no hash-named
+                # copies or generated thumbnail JPGs are published.
+                numbered_name = f"{index:02d}{path.suffix}"
+                target = RAW / numbered_name
+                shutil.copyfile(path, target)
+                if hashlib.sha256(target.read_bytes()).hexdigest() != sha256:
+                    raise ValueError(f"Original image checksum changed: {numbered_name}")
+                bundle.write(target, arcname=numbered_name)
                 prefix = f"archive/{DATE}/images/"
                 manifest.append({
-                    "src": prefix + path.name,
+                    "src": prefix + numbered_name,
                     "width": file_info["width"],
                     "height": file_info["height"],
                     "sha256": sha256,
@@ -119,7 +128,8 @@ def build_site():
     body = json.dumps(data, ensure_ascii=False, indent=2)
     (ARCHIVE / "data.json").write_text(body, encoding="utf-8")
     (PUBLIC / "data.json").write_text(body, encoding="utf-8")
-    print(f"[viewer] Archived {len(manifest)} UNIQUE original images for {DATE}; no thumbnails; dated ZIP {archive_zip.stat().st_size} bytes", flush=True)
+    shutil.rmtree(STAGING, ignore_errors=True)
+    print(f"[viewer] Archived {len(manifest)} UNIQUE, numbered originals for {DATE}; no thumbnails; dated ZIP {archive_zip.stat().st_size} bytes", flush=True)
 
 if __name__ == "__main__":
     missing = [x for x in ("CTEE_USER", "CTEE_PASS") if not os.environ.get(x)]
