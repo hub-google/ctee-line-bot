@@ -148,6 +148,8 @@ async function handle(request:Request){
       const msg=String(error);
       if(msg.includes("Already reviewed"))return json({ok:false,error:"此項已審核，請重新整理"},409);
       if(msg.includes("Request not found"))return json({ok:false,error:"查無這筆申請"},404);
+      if(msg.includes("Cannot remove last keyword"))
+        return json({ok:false,error:"至少需要保留一個追蹤關鍵字，無法核准刪除最後一項"},409);
       throw error;
     }
     return json({ok:true,item:updated,keywords:await keywords(),synced:true});
