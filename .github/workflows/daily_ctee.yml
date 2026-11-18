@@ -1,10 +1,19 @@
 name: Daily CTEE High-Quality Clippings to LINE
 
 on:
+  # One-time 2026-11-18 backfill. Remove this push trigger after verification.
+  push:
+    branches: [master]
+    paths: ['.github/workflows/daily_ctee.yml']
   schedule:
     # Daily 06:00 Asia/Taipei (GitHub scheduled runs may be delayed)
     - cron: '0 22 * * *'
   workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Optional edition date YYYY-MM-DD (Taiwan local time)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -59,9 +68,12 @@ jobs:
         env:
           CTEE_USER: ${{ secrets.CTEE_USER }}
           CTEE_PASS: ${{ secrets.CTEE_PASS }}
+          CTEE_TARGET_DATE: ${{ github.event_name == 'push' && '2026-11-18' || inputs.target_date || '' }}
         run: python viewer/build_preview.py
       - name: Merge new issue into persistent, separate archive branch
         shell: bash
+        env:
+          CTEE_TARGET_DATE: ${{ github.event_name == 'push' && '2026-11-18' || inputs.target_date || '' }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
@@ -69,7 +81,7 @@ jobs:
           git fetch origin viewer-archive
           git worktree add --detach /tmp/ctee-gallery-history origin/viewer-archive
           mkdir -p /tmp/ctee-gallery-history/viewer/public/archive
-          issue_date=$(TZ=Asia/Taipei date +%F)
+          issue_date="${CTEE_TARGET_DATE:-$(TZ=Asia/Taipei date +%F)}"
           mkdir -p "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date"
           rsync -a --delete "viewer/public/archive/$issue_date/" "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date/"
           cp viewer/public/index.html viewer/public/share.html viewer/public/keywords.html viewer/public/data.json viewer/public/robots.txt viewer/public/liff-config.js /tmp/ctee-gallery-history/viewer/public/
