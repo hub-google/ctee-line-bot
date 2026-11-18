@@ -5,8 +5,6 @@ on:
     branches: [master]
     paths:
       - viewer/public/keywords.html
-      - viewer/keyword_gateway/worker.js
-      - viewer/keyword_gateway/test_worker.mjs
       - keywords.txt
       - viewer/send_preview.py
       - .github/workflows/daily_ctee.yml
@@ -44,26 +42,18 @@ jobs:
           Path("/tmp/ctee-keywords.mjs").write_text(code, encoding="utf-8")
           PY
           node --check /tmp/ctee-keywords.mjs
-      - name: Test isolated anonymous gateway and per-item approvals
-        run: node viewer/keyword_gateway/test_worker.mjs
-      - name: Verify GitHub-only keyword integration
+      - name: Verify GitHub keyword reader without external service
         run: |
           python - <<'PY'
           from pathlib import Path
           page = Path("viewer/public/keywords.html").read_text(encoding="utf-8")
           crawler = Path("ctee_downloader_cloud.py").read_text(encoding="utf-8")
           assert "raw.githubusercontent.com" in page
-          assert "https://ctee-keywords-inbox.ber-at.workers.dev" in page
-          assert "location.assign(url.toString())" not in page
-          assert "id=\"wordSearch\"" in page and "readonly placeholder" in page
-          assert 'fetchJSON("/submit"' in page
-          assert 'fetchJSON("/review"' in page
-          assert 'window.setInterval' not in page
-          assert 'data.synced!==true' in page
-          assert "supabase.co" not in page
-          assert "KEYWORDS_API_URL" not in crawler
+          assert "ctee-keywords-inbox" not in page
           assert "supabase.co" not in page + crawler
-          print("GitHub-only keyword UI + crawler validated")
+          assert "KEYWORDS_API_URL" not in crawler
+          assert "setInterval(" not in page
+          print("GitHub-only keyword reader validated")
           PY
       - name: Update persistent gallery with keyword page
         run: |
