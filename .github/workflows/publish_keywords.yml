@@ -42,6 +42,8 @@ jobs:
           Path("/tmp/ctee-keywords.mjs").write_text(code, encoding="utf-8")
           PY
           node --check /tmp/ctee-keywords.mjs
+      - name: Test isolated anonymous gateway and per-item approvals
+        run: node viewer/keyword_gateway/test_worker.mjs
       - name: Verify GitHub-only keyword integration
         run: |
           python - <<'PY'
