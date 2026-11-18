@@ -94,7 +94,8 @@ def build_site():
         for keyword in matched_keywords(result.get("kw", "")):
             if keyword not in entry["keywords"]:
                 entry["keywords"].append(keyword)
-    archive_zip = ARCHIVE / "latest.zip"
+    zip_filename = f"工商時報_{DATE.replace('-', '')}.zip"
+    archive_zip = ARCHIVE / zip_filename
     with zipfile.ZipFile(archive_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=3) as bundle:
         bundle.writestr("README.txt", f"工商時報剪報 {DATE_LABEL}\n僅供具有合法閱讀權限者使用。\n")
         for sha256, entry in grouped.items():
@@ -125,7 +126,7 @@ def build_site():
         "date_label": DATE_LABEL,
         "date": DATE,
         "total": len(manifest),
-        "zip": f"archive/{DATE}/latest.zip",
+        "zip": f"archive/{DATE}/{zip_filename}",
         "images": manifest,
     }
     body = json.dumps(data, ensure_ascii=False, indent=2)
