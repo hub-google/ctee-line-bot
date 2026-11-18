@@ -4,6 +4,7 @@ A registered LIFF_ID is optional. A Flex message is the chat card; a LIFF URL
 is a separately registered web-app entrypoint. Never invent a LIFF ID.
 """
 import hashlib
+import json
 import os
 import re
 import time
@@ -62,17 +63,23 @@ date = data["date"]
 date_label = data.get("date_label", date)
 count = len(images)
 normal_url = site + "?date=" + quote(date, safe="")
-liff_id = os.environ.get("LIFF_ID", "").strip()
-if liff_id and re.fullmatch(r"[A-Za-z0-9_-]+", liff_id):
+# The LIFF ID is public. Read the one actually served by the site so the
+# outgoing card and the browser share the same LIFF app, without a GitHub secret.
+config_response = session.get(urljoin(site, "liff-config.js"), timeout=15)
+config_response.raise_for_status()
+config_text = config_response.text.strip()
+prefix = "window.CTEE_LIFF_ID = "
+if not config_text.startswith(prefix) or not config_text.endswith(";"):
+    raise RuntimeError("Published LIFF config is invalid")
+liff_id = json.loads(config_text[len(prefix):-1]).strip()
+if liff_id and not re.fullmatch(r"[A-Za-z0-9_-]+", liff_id):
+    raise RuntimeError("Published LIFF ID has invalid characters")
+if liff_id:
     reader_url = "https://liff.line.me/" + liff_id + "?date=" + quote(date, safe="")
-    config_response = session.get(urljoin(site, "liff-config.js"), timeout=15)
-    config_response.raise_for_status()
-    if not ("window.CTEE_LIFF_ID" in config_response.text and liff_id in config_response.text):
-        raise RuntimeError("Published LIFF configuration does not match LIFF_ID")
     print("[LINE] Verified configured LIFF app entrypoint", flush=True)
 else:
     reader_url = normal_url
-    print("[LINE] LIFF_ID not configured: link opens share setup notice, not text sharing", flush=True)
+    print("[LINE] LIFF app not registered: card links to reader without LIFF sharing", flush=True)
 zip_url = urljoin(site, data["zip"])
 # Opening the reader's share panel lets the user initiate a real LIFF Flex
 # shareTargetPicker interaction. A LINE text-share URI cannot send Flex messages.
