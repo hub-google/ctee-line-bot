@@ -15,14 +15,16 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
-## GitHub 關鍵字清單（2026-11-18）
+## GitHub 原生關鍵字管理
 
-- 唯一正式來源：`master/keywords.txt`。爬蟲直接讀取 GitHub，不依賴 Cloudflare、Supabase 或其他後端。
-- 公開網頁：`https://hub-google.github.io/ctee-line-bot/keywords.html`，可搜尋和瀏覽追蹤關鍵字。
-- 使用者已明確要求移除先前擅自建立的 Cloudflare 收件資源。因此已刪除 `ctee-keywords-inbox` Worker 及獨立 KV `CTEE_KEYWORDS_INBOX_ONLY`，並刪除 GitHub 上的 Worker 原始碼、測試、同步程式與 Actions 同步工作流程。
-- **線上匿名送出與網站管理審核目前不可用**：純靜態 GitHub Pages 不能安全地接受匿名寫入 GitHub。網站顯示此限制而不是誤報送出成功。沒有使用會要求一般使用者登入 GitHub 的跳轉替代方案。
-- 之前核准的 5 項決議已保存在 `viewer/keyword_gateway/processed.json`；相關核准與駁回已套用至 `keywords.txt`，保留原始歷史以免資料遺失。
-- 不要在未獲明確要求的情況下再新增 Cloudflare Worker、KV、Supabase 資料表或其他中繼服務，也不要在公開網頁中放置 GitHub 個人存取權杖。
+- 網站：https://hub-google.github.io/ctee-line-bot/keywords.html。正式關鍵字來源是 `master/keywords.txt`。
+- 網頁管理者專區已恢復，僅使用 GitHub Contents API，沒有 Cloudflare、Supabase、第三方收件服務或定時輪詢。
+- 管理者輸入管理金鑰 `9` 後，仍須在瀏覽器當次工作階段輸入該儲存庫的 GitHub fine-grained Personal Access Token（僅 `Contents: Read and write`）；Token 只在 JS 記憶體保存，關閉或登出即清除，不會寫入程式庫或瀏覽器儲存空間。固定管理金鑰不是 GitHub 的授權，不能取代 token。
+- 管理者可手動提出多筆新增或刪除草稿，逐字詞核准或駁回。按核准時，網頁取得 GitHub 最新 SHA，立即以 GitHub Contents API 修改 `master/keywords.txt`，再重讀確認生效；若 API 回傳錯誤或驗證不符，不顯示核准成功。每項獨立處理、失敗重試不修改其他字詞；駁回草稿不更動 GitHub。
+- **這個頁面目前不能接收匿名網頁申請**：GitHub Pages 是靜態網頁，GitHub Issues、Contents API 和 Actions workflow_dispatch 的寫入操作都需要 GitHub 授權。若不能使用其他服務、也不要求一般使用者具有 GitHub 帳號，就沒有 GitHub 原生的匿名表單收件管道。管理者介面目前是手動輸入草稿，並非會保存匿名使用者申請的收件匣；不能宣稱完整的公開投稿／審核流程已完成。
+- 語法檢查及 GitHub-only 直接寫入程式的靜態驗證由 `.github/workflows/publish_keywords.yml` 執行；實際 GitHub API 寫入需要管理者在網站輸入其 GitHub 授權，無法在不取得使用者 Token 的情況下聲稱端到端驗收通過。
+- 歷史五筆審核處理記錄保留在 `viewer/keyword_gateway/processed.json`；已核准的關鍵字變動保持在 GitHub `keywords.txt`。
+- 2026-11-18 已刪除臨時建立的 Cloudflare Worker `ctee-keywords-inbox` 及 KV `CTEE_KEYWORDS_INBOX_ONLY`；請勿在未獲明確授權下新增此類資源。
 
 ## LINE
 
