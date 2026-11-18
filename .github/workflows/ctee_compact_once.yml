@@ -1,0 +1,95 @@
+name: One-time Compact CTEE Archived Images
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/ctee_compact_once.yml'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ctee-daily-hq
+  cancel-in-progress: false
+
+jobs:
+  clean-and-redeploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Checkout source changes
+        uses: actions/checkout@v4
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Check out current dated archive safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin viewer-archive
+          git worktree add --detach /tmp/ctee-gallery-history origin/viewer-archive
+          test -s /tmp/ctee-gallery-history/viewer/public/archive/2026-11-18/data.json
+          test -s /tmp/ctee-gallery-history/viewer/public/archive/2026-11-18/latest.zip
+      - name: Verify all original hashes before removing generated duplicates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python viewer/compact_archive.py /tmp/ctee-gallery-history/viewer/public
+          cp viewer/public/index.html viewer/public/robots.txt /tmp/ctee-gallery-history/viewer/public/
+          python viewer/update_history.py /tmp/ctee-gallery-history/viewer/public
+          test ! -e /tmp/ctee-gallery-history/viewer/public/latest.zip
+          test -z "$(find /tmp/ctee-gallery-history/viewer/public/archive -type f -name 'thumb_*.jpg' -print -quit)"
+      - name: Commit archive cleanup only after validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cd /tmp/ctee-gallery-history
+          git add -A viewer/public
+          if git diff --cached --quiet; then
+            echo 'No redundant files remain.'
+          else
+            git commit -m 'archive: remove duplicate thumbnails while keeping exact originals'
+            git push origin HEAD:viewer-archive
+          fi
+          git status --short
+      - name: Upload compacted archive for GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: /tmp/ctee-gallery-history/viewer/public/
+      - name: Publish compacted reader
+        id: publish
+        uses: actions/deploy-pages@v4
+      - name: Verify published archive, unique original files and downloads
+        env:
+          SITE_URL: ${{ steps.publish.outputs.page_url }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, urllib.request
+          base=__import__('os').environ['SITE_URL'].rstrip('/')+'/'
+          root=Path('/tmp/ctee-gallery-history/viewer/public')
+          data=json.loads((root/'archive/2026-11-18/data.json').read_text())
+          imgs=data['images']
+          assert len(imgs)==14, f'Expected all 14 sources, got {len(imgs)}'
+          assert len({x['sha256'] for x in imgs})==len(imgs), 'Duplicate source images detected'
+          assert not any(root.glob('archive/**/thumb_*.jpg')), 'Unexpected thumbnail files'
+          assert not (root/'latest.zip').exists()
+          assert (root/data['zip']).is_file(), 'Dated download ZIP is missing'
+          assert all((root/x['src']).is_file() for x in imgs), 'Original source missing'
+          with urllib.request.urlopen(base+'data.json') as res: published=json.load(res)
+          assert len(published['images'])==14
+          assert all('thumb' not in x for x in published['images'])
+          with urllib.request.urlopen(base+published['images'][0]['src']) as res: first=res.read()
+          assert hashlib.sha256(first).hexdigest()==published['images'][0]['sha256']
+          with urllib.request.urlopen(base+published['zip']) as res: sig=res.read(4)
+          assert sig.startswith(b'PK'), 'Dated ZIP does not download'
+          print('[dedup] VERIFIED LIVE: 14 original JPGs; 0 stored thumbnails; one dated ZIP, original checksum valid')
+          PY
