@@ -65,13 +65,18 @@ normal_url = site + "?date=" + quote(date, safe="")
 liff_id = os.environ.get("LIFF_ID", "").strip()
 if liff_id and re.fullmatch(r"[A-Za-z0-9_-]+", liff_id):
     reader_url = "https://liff.line.me/" + liff_id + "?date=" + quote(date, safe="")
-    print("[LINE] Using configured LIFF application URL", flush=True)
+    config_response = session.get(urljoin(site, "liff-config.js"), timeout=15)
+    config_response.raise_for_status()
+    if not ("window.CTEE_LIFF_ID" in config_response.text and liff_id in config_response.text):
+        raise RuntimeError("Published LIFF configuration does not match LIFF_ID")
+    print("[LINE] Verified configured LIFF app entrypoint", flush=True)
 else:
     reader_url = normal_url
-    print("[LINE] No registered LIFF_ID; using direct LINE in-app browser link", flush=True)
+    print("[LINE] LIFF_ID not configured: link opens share setup notice, not text sharing", flush=True)
 zip_url = urljoin(site, data["zip"])
-share_text = f"工商時報每日剪報｜{date_label}\n{count} 則相關新聞\n{reader_url}"
-share_link = "https://line.me/R/msg/text/?" + quote(share_text, safe="")
+# Opening the reader's share panel lets the user initiate a real LIFF Flex
+# shareTargetPicker interaction. A LINE text-share URI cannot send Flex messages.
+share_link = reader_url + "&share=1"
 keyword_url = "https://hub-google.github.io/ctee-line-bot/keywords.html"
 
 message = {
