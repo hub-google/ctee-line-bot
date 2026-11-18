@@ -1,1 +1,20 @@
-{}
+{
+  "587c2d53-9de1-40f1-9bff-acc3fad72073-0": {
+    "operation": "add",
+    "keyword": "阿",
+    "decision": "approved",
+    "effect": "changed"
+  },
+  "587c2d53-9de1-40f1-9bff-acc3fad72073-1": {
+    "operation": "remove",
+    "keyword": "test2",
+    "decision": "approved",
+    "effect": "changed"
+  },
+  "587c2d53-9de1-40f1-9bff-acc3fad72073-2": {
+    "operation": "remove",
+    "keyword": "凱壽",
+    "decision": "rejected",
+    "effect": "no-op"
+  }
+}
