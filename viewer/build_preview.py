@@ -29,7 +29,8 @@ sys.path.insert(0, str(ROOT))
 import ctee_downloader_cloud as legacy  # noqa: E402
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-NOW = datetime.now(ZoneInfo("Asia/Taipei"))
+NOW = (datetime.strptime(os.environ["CTEE_TARGET_DATE"], "%Y-%m-%d")
+       if os.environ.get("CTEE_TARGET_DATE") else datetime.now(ZoneInfo("Asia/Taipei")))
 DATE = NOW.strftime("%Y-%m-%d")
 DATE_LABEL = NOW.strftime("%Y/%m/%d")
 ARCHIVE = PUBLIC / "archive" / DATE
