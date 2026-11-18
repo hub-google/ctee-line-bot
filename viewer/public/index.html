@@ -14,7 +14,6 @@
     header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.96);backdrop-filter:blur(15px);border-bottom:1px solid var(--line)}
     .head{max-width:960px;min-height:66px;padding:12px 20px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
     .brand{font-size:17px;font-weight:750;letter-spacing:.01em}.brand small{display:block;font-size:11px;letter-spacing:.03em;color:var(--muted);font-weight:450}
-    .headlink{background:#e8f2ef;color:#176e5c;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:650;white-space:nowrap}
     main{max-width:960px;margin:auto;padding:25px 18px 80px}
     h1{font-size:clamp(27px,5vw,37px);letter-spacing:-.04em;line-height:1.3;margin:12px 0 5px}
     .intro{font-size:14px;color:var(--muted);margin-bottom:20px}.summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -42,11 +41,11 @@
     .share-feedback{display:block;width:100%;font-size:12px;color:#b42318;margin-top:6px}.share-feedback[hidden]{display:none}.footer{text-align:center;font-size:12px;color:var(--muted);padding-top:25px}
     .pswp__button--download{display:flex!important;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:650;min-width:70px}
     @media(min-width:700px){.gallery:not(.flow) .image-btn img{height:270px}}
-    @media(max-width:430px){main{padding:18px 12px 64px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.image-btn img{height:195px}.meta{padding:9px;gap:4px}.head{padding:11px 14px}.brand{font-size:15px}.headlink{font-size:12px;padding:8px 9px}}
+    @media(max-width:430px){main{padding:18px 12px 64px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.image-btn img{height:195px}.meta{padding:9px;gap:4px}.head{padding:11px 14px}.brand{font-size:15px}}
   </style>
 </head>
 <body>
-<header><div class="head"><div class="brand">工商時報 <small>每日剪報｜原圖閱讀與歷史典藏</small></div><a id="topDownload" class="headlink" href="latest.zip" download>下載全部剪報</a></div></header>
+<header><div class="head"><div class="brand">工商時報 <small>每日剪報｜原圖閱讀與歷史典藏</small></div></div></header>
 <main>
   <div class="summary"><span class="pill">原始畫質</span><span class="pill" id="countBadge">正在載入</span></div>
   <h1 id="headline">今日工商時報剪報</h1>
@@ -54,7 +53,7 @@
   <div class="tools">
     <label class="history"><span>選擇日期</span><select id="daySelect" aria-label="選擇歷史剪報日期"><option>載入中…</option></select></label>
     <div class="tabs" role="group" aria-label="閱讀模式"><button id="flowBtn" type="button" class="active" aria-pressed="true">連續閱讀</button><button id="gridBtn" type="button" aria-pressed="false">縮圖總覽</button></div>
-    <div class="actions"><button id="openBtn" type="button" class="btn primary">全螢幕放大</button><a id="zipBtn" class="btn" href="latest.zip" download>下載全部 ZIP</a><button type="button" id="showShareBtn" class="btn">分享至 LINE</button></div><span id="shareFeedback" class="share-feedback" aria-live="polite" role="status" hidden></span>
+    <div class="actions"><button id="openBtn" type="button" class="btn primary">全螢幕放大</button><button id="zipBtn" type="button" class="btn" disabled>下載全部剪報</button><button type="button" id="showShareBtn" class="btn">分享至 LINE</button></div><span id="shareFeedback" class="share-feedback" aria-live="polite" role="status" hidden></span>
   </div>
   <p class="hint">只保存一份來源原圖。連續閱讀與縮圖總覽都使用同一張原圖（以瀏覽器縮放顯示），可雙指放大、拖曳細看、左右換篇。</p>
   <div id="gallery" class="gallery flow"><div class="status">正在取得剪報，請稍候…</div></div>
@@ -72,6 +71,8 @@ const validDate=/^\d{4}-\d{2}-\d{2}$/.test(selected);
 let images=[], lightbox=null, mode='flow', displayedDate='';
 const liffId=String(window.CTEE_LIFF_ID||'').trim();
 const shareLiffId=String(window.CTEE_SHARE_LIFF_ID||'').trim();
+const zipButton=document.querySelector('#zipBtn');
+let zipDownloadUrl='';
 const shareButton=document.querySelector('#showShareBtn');
 const shareFeedback=document.querySelector('#shareFeedback');
 const autoShareRequested=query.get('share')==='1';
@@ -139,6 +140,33 @@ async function shareToLine(auto=false){
     shareFeedback.hidden=false;
   }finally{shareButton.disabled=false;}
 }
+function downloadAllClippings(){
+  if(!zipDownloadUrl){window.alert('剪報尚未載入完成，請稍候重試。');return;}
+  const zipUrl=new URL(zipDownloadUrl,location.href);
+  const externalUrl=new URL(zipUrl.href);
+  externalUrl.searchParams.set('openExternalBrowser','1');
+  // LINE WebViews often display ZIP links instead of saving them. Use the
+  // platform's supported external-browser path on the user's actual tap.
+  try{
+    if(window.liff && typeof window.liff.isInClient==='function' &&
+       window.liff.isInClient() && typeof window.liff.openWindow==='function'){
+      window.liff.openWindow({url:externalUrl.href,external:true});
+      return;
+    }
+  }catch(err){console.warn('LINE 外部下載無法啟動，改用瀏覽器連結',err);}
+  if(/\\bLine\\/[0-9]/i.test(navigator.userAgent)){
+    location.assign(externalUrl.href);
+    return;
+  }
+  // Chrome/Safari/desktop: direct user-initiated same-origin file download.
+  const link=document.createElement('a');
+  link.href=zipUrl.href;
+  link.download=displayedDate.replaceAll('-','')+'_工商時報剪報.zip';
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+zipButton.addEventListener('click',downloadAllClippings);
 shareButton.addEventListener('click',()=>shareToLine(false));
 if(liffId)ensureLiff().catch(()=>{});
 function setMode(newMode){
@@ -198,8 +226,8 @@ try{
   document.querySelector('#subtitle').textContent='收錄 '+images.length+' 張 · 原始畫質 · 歷史日期可切換';
   document.querySelector('#countBadge').textContent=images.length+' 張原圖';
   const zip=data.zip||'latest.zip';
-  document.querySelector('#topDownload').href=zip;
-  document.querySelector('#zipBtn').href=zip;
+  zipDownloadUrl=new URL(zip,location.href).href;
+  zipButton.disabled=false;
   render();setMode(mode);
   if(autoShareRequested){
     // LINE's Flex button opens this LIFF in share mode; authentication may
@@ -246,6 +274,7 @@ try{
   gallery.replaceChildren(el('div','status','暫時無法載入剪報：'+err.message));
   document.querySelector('#countBadge').textContent='無資料';
   document.querySelector('#openBtn').disabled=true;
+  zipButton.disabled=true;
 }
 </script>
 </body></html>
