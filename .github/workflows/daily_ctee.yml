@@ -1,10 +1,6 @@
 name: Daily CTEE High-Quality Clippings to LINE
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - 'viewer/send_preview.py' # Single explicit reshare trigger after implementation
   schedule:
     # Daily 06:00 Asia/Taipei (GitHub scheduled runs may be delayed)
     - cron: '0 22 * * *'
