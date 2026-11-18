@@ -1,6 +1,10 @@
 name: Preview CTEE Viewer (manual)
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/viewer_preview.yml'
   workflow_dispatch:
 
 permissions:
