@@ -54,7 +54,7 @@ jobs:
           issue_date=$(TZ=Asia/Taipei date +%F)
           mkdir -p "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date"
           rsync -a --delete "viewer/public/archive/$issue_date/" "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date/"
-          cp viewer/public/index.html viewer/public/data.json viewer/public/robots.txt /tmp/ctee-gallery-history/viewer/public/
+          cp viewer/public/index.html viewer/public/keywords.html viewer/public/data.json viewer/public/robots.txt /tmp/ctee-gallery-history/viewer/public/
           python viewer/update_history.py /tmp/ctee-gallery-history/viewer/public
           cd /tmp/ctee-gallery-history
           git add viewer/public
