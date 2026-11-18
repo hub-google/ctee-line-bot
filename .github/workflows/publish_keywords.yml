@@ -53,6 +53,12 @@ jobs:
           assert "supabase.co" not in page + crawler
           assert "KEYWORDS_API_URL" not in crawler
           assert "setInterval(" not in page
+          assert "api.github.com/repos/" in page
+          assert '"/contents/keywords.txt","PUT"' in page
+          assert "reviewQueue" in page and "applyReview(item)" in page
+          assert "ctee-keywords-inbox" not in page
+          assert "supabase.co" not in page
+          assert "GITHUB_WRITE_TOKEN" not in page
           print("GitHub-only keyword reader validated")
           PY
       - name: Update persistent gallery with keyword page
