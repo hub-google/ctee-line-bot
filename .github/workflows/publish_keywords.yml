@@ -64,6 +64,8 @@ jobs:
           assert all(isinstance(word,str) and word.strip() for word in result['keywords'])
           print('Supabase API available: %d keywords' % len(result['keywords']))
           PY
+      - name: End-to-end review test (remove test keyword after run)
+        run: python viewer/test_ctee_supabase_e2e.py
       - name: Update persistent gallery with keyword page
         run: |
           git config user.name 'github-actions[bot]'
