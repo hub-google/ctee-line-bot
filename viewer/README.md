@@ -15,6 +15,14 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
+## 關鍵字來源與自動同步
+
+- 管理介面核准後，Supabase `ctee_keyword_settings` 立即成為正式關鍵字清單。爬蟲 `ctee_downloader_cloud.py` 的 `load_keywords()` 先讀取 Supabase API；API 失敗時才退回 GitHub `keywords.txt`，最後退回本地檔案。
+- `keywords.txt` 是追蹤清單的 **GitHub 備份**，不是審核後的即時主資料。新增 `.github/workflows/sync_ctee_keywords.yml`，約每 15 分鐘（GitHub 排程可能延遲）由 GitHub Actions 透過公開、只讀的 Supabase Edge API 讀取已核准關鍵字，更新 `master/keywords.txt`；內容相同時不會 commit。
+- `viewer/sync_keywords.py` 嚴格驗證回應狀態、格式、數量、去重、revision；若 API 失敗、回應不完整或資料不合法就退出，**保留原始備份不覆蓋**。同步使用既有 GitHub Actions `GITHUB_TOKEN`，不需要公開金鑰、登入帳號、額外 Worker 或付費服務。
+- 以管理後台「已核准」清單與 Supabase API 為準；GitHub 備份可能落後最多一個排程間隔加排程延遲。需要立即更新 GitHub 可在 GitHub Actions 執行 `Sync CTEE Approved Keywords Backup` 的 `Run workflow`，不會重新抓報紙或推送 LINE。
+- 2026-11-18 已將核准項目 `test2` 補入 `master/keywords.txt`，與 Supabase 正式清單一致。
+
 ## LINE
 
 - 正式每日推播使用 LINE Flex，包含閱讀、下載、分享、調整關鍵字。
