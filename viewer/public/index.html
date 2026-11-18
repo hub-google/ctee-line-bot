@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7f8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>工商時報｜每日剪報閱讀器（測試版）</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.css">
+  <style>
+    :root {color-scheme: light; --bg:#f6f7f8;--fg:#20272f;--muted:#687482;--line:#e2e7ea;--accent:#176e5c;--white:#fff;}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.55}
+    button,input{font:inherit}button,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration:none}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.96);backdrop-filter:blur(15px);border-bottom:1px solid var(--line)}
+    .head{max-width:960px;min-height:66px;padding:12px 20px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{font-size:17px;font-weight:750;letter-spacing:.01em}.brand small{display:block;font-size:11px;letter-spacing:.03em;color:var(--muted);font-weight:450}
+    .headlink{background:#e8f2ef;color:#176e5c;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:650;white-space:nowrap}
+    main{max-width:960px;margin:auto;padding:25px 18px 80px}
+    h1{font-size:clamp(27px,5vw,37px);letter-spacing:-.04em;line-height:1.3;margin:12px 0 5px}
+    .intro{font-size:14px;color:var(--muted);margin-bottom:20px}.summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{background:#e6eee9;color:#176e5c;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:650}
+    .tools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin:18px 0 20px}
+    .tabs{background:#e7ebee;border-radius:12px;padding:4px;display:flex;gap:4px}
+    .tabs button{border:0;border-radius:9px;background:transparent;padding:9px 15px;color:#4e5964;font-weight:650;font-size:13px;cursor:pointer}
+    .tabs button.active{background:#fff;color:#161e25;box-shadow:0 1px 5px #0012}
+    .actions{display:flex;flex-wrap:wrap;gap:7px}
+    .btn{padding:10px 13px;background:#fff;color:#27313a;border:1px solid #d9e1e4;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer}
+    .btn.primary{background:#146e5a;color:#fff;border-color:#146e5a}
+    .hint{color:var(--muted);font-size:12px;margin:0 0 18px}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px}
+    .gallery.flow{display:flex;flex-direction:column;max-width:820px;margin:auto;gap:24px}
+    .item{background:#fff;border-radius:15px;border:1px solid var(--line);box-shadow:0 3px 20px #182b3808;overflow:hidden;min-width:0}
+    .image-btn{display:block;width:100%;border:0;background:#fff;padding:0;cursor:zoom-in;text-align:left}
+    .image-btn img{width:100%;height:220px;object-fit:contain;display:block;background:#f5f5f3}
+    .flow .image-btn img{height:auto;max-height:none;object-fit:contain}
+    .meta{padding:11px 13px;display:flex;gap:8px;justify-content:space-between;align-items:center}
+    .meta .title{font-size:12px;overflow-wrap:anywhere;color:#38444b}
+    .meta .number{font-size:12px;font-weight:750;color:var(--accent)}
+    .download{font-size:12px;color:var(--accent);font-weight:650;white-space:nowrap;padding:5px 0 5px 8px}
+    .status{padding:38px 25px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;color:var(--muted)}
+    .footer{text-align:center;font-size:12px;color:var(--muted);padding-top:25px}
+    .pswp__button--download{display:flex!important;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:650;min-width:70px}
+    @media(min-width:700px){.gallery:not(.flow) .image-btn img{height:270px}}
+    @media(max-width:430px){main{padding:18px 12px 64px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.image-btn img{height:195px}.meta{padding:9px;gap:4px}.head{padding:11px 14px}.brand{font-size:15px}.headlink{font-size:12px;padding:8px 9px}}
+  </style>
+</head>
+<body>
+<header><div class="head"><div class="brand">工商時報 <small>每日剪報｜獨立閱讀器測試版</small></div><a id="topDownload" class="headlink" href="latest.zip" download>下載全部剪報</a></div></header>
+<main>
+  <div class="summary"><span class="pill">閱讀器預覽</span><span class="pill" id="countBadge">正在載入</span></div>
+  <h1 id="headline">今日工商時報剪報</h1>
+  <div class="intro" id="subtitle">載入當日新聞圖片中…</div>
+  <div class="tools">
+    <div class="tabs" role="group" aria-label="閱讀模式"><button id="flowBtn" type="button" class="active" aria-pressed="true">連續閱讀</button><button id="gridBtn" type="button" aria-pressed="false">縮圖總覽</button></div>
+    <div class="actions"><button id="openBtn" type="button" class="btn primary">全螢幕放大</button><a id="zipBtn" class="btn" href="latest.zip" download>下載全部 ZIP</a></div>
+  </div>
+  <p class="hint">點任何剪報即可全螢幕閱讀；雙指縮放、拖曳看細節、左右滑動換篇。每張圖片下方都可下載原圖。</p>
+  <div id="gallery" class="gallery flow"><div class="status">正在取得剪報，請稍候…</div></div>
+  <div class="footer">此頁為獨立功能測試，不影響現有 LINE 每日推播與 Rentry 閱讀頁。<br>僅供具有適當閱讀授權者使用；請勿未經授權轉載剪報。</div>
+</main>
+<script type="module">
+  const gallery = document.querySelector('#gallery');
+  const flowBtn = document.querySelector('#flowBtn'), gridBtn = document.querySelector('#gridBtn');
+  let images = [], lightbox = null;
+  function setMode(mode) {
+    const flow = mode === 'flow';
+    gallery.classList.toggle('flow', flow);
+    flowBtn.classList.toggle('active', flow); gridBtn.classList.toggle('active', !flow);
+    flowBtn.setAttribute('aria-pressed', String(flow)); gridBtn.setAttribute('aria-pressed', String(!flow));
+    try { localStorage.setItem('ctee-viewer-mode',mode); } catch(e){}
+  }
+  flowBtn.addEventListener('click',()=>setMode('flow'));gridBtn.addEventListener('click',()=>setMode('grid'));
+  function openGallery(i) {
+    if (lightbox) { lightbox.loadAndOpen(i); return; }
+    window.open(images[i].src, '_blank', 'noopener');
+  }
+  function el(tag, cls, content) {
+    const x=document.createElement(tag); if(cls)x.className=cls;if(content!==undefined)x.textContent=content;return x;
+  }
+  function render() {
+    gallery.replaceChildren();
+    images.forEach((item,i)=>{
+      const card=el('article','item');
+      const btn=el('button','image-btn');btn.type='button';btn.setAttribute('aria-label','放大第 '+(i+1)+' 張剪報');
+      const img=el('img');img.src=item.thumb||item.src;img.alt='第 '+(i+1)+' 張剪報，關鍵字：'+(item.keyword||'');img.loading=i<2?'eager':'lazy';img.decoding='async';
+      btn.append(img);btn.addEventListener('click',()=>openGallery(i));
+      const meta=el('div','meta');
+      const info=el('div','title');info.append(el('span','number',String(i+1).padStart(2,'0')+' / '+images.length+' · '));info.append(document.createTextNode(item.keyword||'剪報'));
+      const link=el('a','download','下載原圖');link.href=item.src;link.download='工商時報_'+String(i+1).padStart(2,'0')+'.jpg';link.setAttribute('aria-label','下載第 '+(i+1)+' 張原圖');
+      meta.append(info,link);card.append(btn,meta);gallery.append(card);
+    });
+  }
+  try {
+    const r=await fetch('data.json?ts='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw Error('新聞清單 HTTP '+r.status);
+    const data=await r.json();
+    if(!Array.isArray(data.images)||!data.images.length)throw Error('今天尚無剪報');
+    images=data.images;
+    document.querySelector('#headline').textContent=(data.date_label||'今日')+' 工商時報剪報';
+    document.querySelector('#subtitle').textContent='今天共有 '+images.length+' 張新聞剪報 · 可連續閱讀、全螢幕放大與下載';
+    document.querySelector('#countBadge').textContent=images.length+' 篇新聞';
+    render();
+    try{setMode(localStorage.getItem('ctee-viewer-mode')||'flow')}catch(e){setMode('flow')}
+    try{
+      const {default:PhotoSwipeLightbox}=await import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js');
+      lightbox=new PhotoSwipeLightbox({dataSource:images.map(x=>({src:x.src,width:x.width||1200,height:x.height||1800,alt:x.keyword||'新聞剪報'})),pswpModule:()=>import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),bgOpacity:.94,showHideAnimationType:'fade',pinchToClose:false});
+      lightbox.on('uiRegister',()=>{
+        lightbox.pswp.ui.registerElement({name:'download-button',order:8,isButton:true,tagName:'a',html:'下載原圖',onInit:(button,pswp)=>{
+          function update(){const n=pswp.currIndex;button.href=images[n].src;button.download='工商時報_'+String(n+1).padStart(2,'0')+'.jpg';button.title='下載原圖'}
+          pswp.on('change',update);update();
+        }});
+      });
+      lightbox.init();
+    }catch(error){console.warn('圖片全螢幕外掛載入失敗，改以原圖連結開啟：',error)}
+    document.querySelector('#openBtn').addEventListener('click',()=>openGallery(0));
+  }catch(error){
+    gallery.replaceChildren(el('div','status','無法載入剪報：'+error.message+'。請稍後重新整理。'));
+    document.querySelector('#countBadge').textContent='暫時無資料';
+    document.querySelector('#openBtn').disabled=true;
+  }
+</script>
+</body></html>
