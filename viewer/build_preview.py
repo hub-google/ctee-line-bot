@@ -11,7 +11,6 @@ import hashlib
 import io
 import json
 import os
-import shutil
 import sys
 import threading
 import zipfile
@@ -76,6 +75,7 @@ def build_site():
     if not received_results:
         raise RuntimeError("No matching clippings. Refuse to publish an empty viewer.")
     manifest = []
+    seen_sha256 = set()
     archive_zip = ARCHIVE / "latest.zip"
     with zipfile.ZipFile(archive_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=3) as bundle:
         bundle.writestr("README.txt", f"工商時報剪報 {DATE_LABEL}\n僅供具有合法閱讀權限者使用。\n")
@@ -84,27 +84,28 @@ def build_site():
             if not file_info:
                 continue
             path = file_info["path"]
+            sha256 = file_info["sha256"]
+            # Content-addressed storage: identical clipping content appears only once.
+            if sha256 in seen_sha256:
+                print(f"[viewer] Skip repeated newspaper image: {sha256[:16]}", flush=True)
+                continue
             index = len(manifest) + 1
-            thumb = RAW / f"thumb_{index:02d}.jpg"
             try:
-                with Image.open(path) as original:
-                    resized = original.convert("RGB")
-                    resized.thumbnail((700, 1200), Image.Resampling.LANCZOS)
-                    resized.save(thumb, "JPEG", quality=85, optimize=True)
-                # The ZIP contains the exact bytes from the source, NOT the thumbnail.
+                # Only original image files are stored. No thumbnail JPEG copies.
+                # The dated ZIP is kept once for the existing one-click download feature.
                 bundle.write(path, arcname=f"{index:02d}_{path.name}")
                 prefix = f"archive/{DATE}/images/"
                 manifest.append({
                     "src": prefix + path.name,
-                    "thumb": prefix + thumb.name,
                     "width": file_info["width"],
                     "height": file_info["height"],
-                    "sha256": file_info["sha256"],
+                    "sha256": sha256,
                     "keyword": result.get("kw", ""),
                     "article_url": result.get("article_url", ""),
                 })
+                seen_sha256.add(sha256)
             except Exception as exc:
-                print(f"[viewer] Failed to create thumbnail for {path}: {exc}", flush=True)
+                print(f"[viewer] Failed to archive original image {path}: {exc}", flush=True)
     if not manifest:
         raise RuntimeError("No valid source images were saved; no deployment or LINE push.")
     data = {
@@ -118,8 +119,7 @@ def build_site():
     body = json.dumps(data, ensure_ascii=False, indent=2)
     (ARCHIVE / "data.json").write_text(body, encoding="utf-8")
     (PUBLIC / "data.json").write_text(body, encoding="utf-8")
-    shutil.copyfile(archive_zip, PUBLIC / "latest.zip")
-    print(f"[viewer] Archived {len(manifest)} original-resolution images for {DATE}; ZIP {archive_zip.stat().st_size} bytes", flush=True)
+    print(f"[viewer] Archived {len(manifest)} UNIQUE original images for {DATE}; no thumbnails; dated ZIP {archive_zip.stat().st_size} bytes", flush=True)
 
 if __name__ == "__main__":
     missing = [x for x in ("CTEE_USER", "CTEE_PASS") if not os.environ.get(x)]
