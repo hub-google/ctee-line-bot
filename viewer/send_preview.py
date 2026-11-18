@@ -85,7 +85,7 @@ zip_url = urljoin(site, data["zip"])
 # Share the dated LIFF URL when registered; otherwise share the full reader URL.
 # This route shares a link, while LIFF SDK on the reader may share a Flex card.
 share_link = "https://line.me/R/share?text=" + quote(
-    f"工商時報｜{date_label} 每日剪報\\n{reader_url}", safe=""
+    f"工商時報｜{date_label} 每日剪報\n{reader_url}", safe=""
 )
 keyword_url = "https://hub-google.github.io/ctee-line-bot/keywords.html"
 
