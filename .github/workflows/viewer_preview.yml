@@ -1,0 +1,59 @@
+name: Preview CTEE Viewer and Send LINE Test
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'viewer/**'
+      - '.github/workflows/viewer_preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ctee-viewer-preview
+  cancel-in-progress: true
+
+jobs:
+  viewer-test:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install requirements
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Build gallery from real CTEE clippings
+        env:
+          CTEE_USER: ${{ secrets.CTEE_USER }}
+          CTEE_PASS: ${{ secrets.CTEE_PASS }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+        run: python viewer/build_preview.py
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload reader
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: viewer/public
+      - name: Publish reader
+        id: publish
+        uses: actions/deploy-pages@v4
+      - name: Verify live reader and send LINE test
+        env:
+          SITE_URL: ${{ steps.publish.outputs.page_url }}
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python viewer/send_preview.py
