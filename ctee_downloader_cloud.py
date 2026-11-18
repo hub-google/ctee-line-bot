@@ -311,7 +311,11 @@ async def run_worker():
         # 🚀 精準化對策：根據台灣時間強制抓取當天日期，防止被官網舊緩存誤導
         from datetime import datetime, timedelta, timezone
         tw_now = datetime.now(timezone.utc) + timedelta(hours=8)
-        target_date = tw_now.strftime("%Y%m%d")
+        date_override = os.environ.get("CTEE_TARGET_DATE", "").strip()
+        if date_override:
+            target_date = datetime.strptime(date_override, "%Y-%m-%d").strftime("%Y%m%d")
+        else:
+            target_date = tw_now.strftime("%Y%m%d")
         target_url = f"https://readers.ctee.com.tw/cm/{target_date}"
         
         print(f"[1/3] 正在登入並導向今日版面 ({target_date})...")
@@ -381,8 +385,28 @@ async def run_worker():
                     except: pass
         
         # 取得版面連結
+        # Historical editions may no longer appear on the live /cm homepage.
+        # Gather the selected edition AND the current index before filtering by date.
+        await page.goto(target_url, wait_until="domcontentloaded")
+        dated_page = await page.content()
         await page.goto(BASE_URL)
-        links = set(re.findall(r'/cm/\d+/[a-zA-Z0-9]+', await page.content(), re.IGNORECASE))
+        links = set(re.findall(r'/cm/\\d+/[a-zA-Z0-9]+',
+                               dated_page + "\\n" + await page.content(), re.IGNORECASE))
+        if date_override:
+            # Use the existing published archive only to discover 11/18 section
+            # URLs. Every clipping is still fetched anew from the source site.
+            archive_url = ("https://hub-google.github.io/ctee-line-bot/archive/"
+                           + date_override + "/data.json")
+            try:
+                old_manifest = requests.get(archive_url, timeout=15)
+                old_manifest.raise_for_status()
+                for old_item in old_manifest.json().get("images", []):
+                    article_url = old_item.get("article_url", "")
+                    match = re.search(r'https://readers\\.ctee\\.com\\.tw(/cm/\\d+/[a-zA-Z0-9]+)', article_url)
+                    if match and target_date in match.group(1):
+                        links.add(match.group(1))
+            except (requests.RequestException, ValueError) as exc:
+                print(f"[backfill] Could not read historical URL list: {exc}", flush=True)
         # 💡 過濾邏輯：確保我們只點擊當天日期的連結，防止抓到舊新聞
         section_urls = [f"https://readers.ctee.com.tw{l}" for l in links if target_date in l and any(k in l.lower() for k in ["aa", "ab", "ac", "asa"])]
         
