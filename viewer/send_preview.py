@@ -70,7 +70,7 @@ config_response.raise_for_status()
 config_text = config_response.text
 def published_liff_id(name):
     # Both identifiers are PUBLIC; the LINE access token remains in GitHub Secrets.
-    match = re.search(r'^window\.' + re.escape(name) + r'\s*=\s*("[^"]+")\s*;\s*, config_text, re.M)
+    match = re.search(r'^window\.' + re.escape(name) + r'\s*=\s*("[^"]+")\s*;' + r'\s*$', config_text, re.M)
     if not match:
         raise RuntimeError("Missing LIFF public config: " + name)
     value = json.loads(match.group(1))
