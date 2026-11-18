@@ -106,7 +106,7 @@ function render(){
     const resolution=el('div','','原圖 '+item.width+'×'+item.height);resolution.style.color='#7a858d';resolution.style.fontSize='11px';
     info.append(resolution);
     const link=el('a','download','下載原圖');link.href=item.src;
-    link.download='工商時報_'+displayedDate+'_'+String(i+1).padStart(2,'0')+'.jpg';
+    link.download=item.src.split('/').pop();
     link.setAttribute('aria-label','下載第 '+(i+1)+' 張來源原圖');
     meta.append(info,link);card.append(btn,meta);gallery.append(card);
   });
@@ -157,7 +157,7 @@ try{
     });
     lightbox.on('uiRegister',()=>{
       lightbox.pswp.ui.registerElement({name:'download-button',order:8,isButton:true,tagName:'a',html:'下載原圖',onInit:(button,pswp)=>{
-        const update=()=>{const i=pswp.currIndex;button.href=images[i].src;button.download='工商時報_'+displayedDate+'_'+(i+1)+'.jpg';button.title='下載來源原圖'};
+        const update=()=>{const i=pswp.currIndex;button.href=images[i].src;button.download=images[i].src.split('/').pop();button.title='下載來源原圖'};
         pswp.on('change',update);update();
       }});
     });
