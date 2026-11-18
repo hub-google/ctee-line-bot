@@ -103,7 +103,7 @@ message = {
                 {"type": "button", "style": "primary", "color": "#176B57",
                  "action": {"type": "uri", "label": "開啟每日剪報", "uri": reader_url}},
                 {"type": "button", "style": "secondary",
-                 "action": {"type": "uri", "label": "下載今日全部圖片", "uri": zip_url}},
+                 "action": {"type": "uri", "label": "開啟原圖下載區", "uri": normal_url}},
                 {"type": "button", "style": "secondary",
                  "action": {"type": "uri", "label": "分享新聞給好友", "uri": share_link}},
                 {"type": "button", "style": "link",
