@@ -15,6 +15,14 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
+## 閱讀器批次下載及指定日期重跑（2026-11-19）
+
+- 下載全部剪報只保留閱讀器操作區的一個按鈕，不再於頁首重複；選取任一歷史日期時使用該日期歸檔的 `archive/YYYY-MM-DD/latest.zip`。
+- LINE LIFF 內點擊下載會呼叫 `liff.openWindow({external:true})` 將 ZIP 交給手機預設瀏覽器；一般 LINE 內建 WebView 使用 LINE 支援的 `openExternalBrowser=1`；一般瀏覽器保留原生 ZIP 下載。是否真的儲存成功仍由手機瀏覽器／作業系統決定，無法在頁面強制繞過系統下載限制。
+- 爬蟲、原圖建置和 GitHub Actions 都支援 `CTEE_TARGET_DATE=YYYY-MM-DD`，workflow 手動觸發時可選填 `target_date`。沒指定仍照台灣當日執行。歷史重跑會以既有歸檔的文章網址補足歷史版面連結，但原圖仍逐篇重新擷取，不複製舊圖冒充重跑。
+- 2026-11-18 已成功重跑並發布 31 張依 SHA-256 去重的原圖及當日 ZIP；驗證後 LINE Push API 回傳 HTTP 200，GitHub Actions run `44343340866`。舊日期資料仍留在同一日期資料夾，不建立第二份。
+- 正式排程維持每日 06:00（台灣時間）；一次性的 11/18 自動觸發入口在驗證完成後移除。
+
 ## 關鍵字：Supabase 單一正式來源（2026-11-18）
 
 - 正式追蹤清單已從原本 33 個 GitHub 關鍵字遷移到 Supabase `public.ctee_keywords`。新資料完全以 Supabase 為準；根目錄舊 `keywords.txt` 已在端到端驗收通過後刪除；歷史備份仍保留於 `legacy/2026-11-18/`，不參與運行。
