@@ -1,1 +1,1 @@
-window.CTEE_LIFF_ID = "";
+window.CTEE_LIFF_ID = "2012346974-oasuaJGG";
