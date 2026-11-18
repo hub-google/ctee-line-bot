@@ -81,12 +81,10 @@ else:
     reader_url = normal_url
     print("[LINE] LIFF app not registered: card links to reader without LIFF sharing", flush=True)
 zip_url = urljoin(site, data["zip"])
-# Open LINE's native "Share with" recipient picker on the first tap.
-# Share the dated LIFF URL when registered; otherwise share the full reader URL.
-# This route shares a link, while LIFF SDK on the reader may share a Flex card.
-share_link = "https://line.me/R/share?text=" + quote(
-    f"工商時報｜{date_label} 每日剪報\n{reader_url}", safe=""
-)
+# LINE Flex's URI action opens our LIFF reader in share mode. The LIFF
+# reader invokes shareTargetPicker([Flex]) directly after initialization.
+# A shared Flex card opens the same dated LIFF reader for the recipient.
+share_link = reader_url + "&share=1" if liff_id else reader_url
 keyword_url = "https://hub-google.github.io/ctee-line-bot/keywords.html"
 
 message = {
