@@ -76,7 +76,6 @@ const shareFeedback=document.querySelector('#shareFeedback');
 const autoShareRequested=query.get('share')==='1';
 const readerUrl=()=>location.origin+location.pathname+'?date='+encodeURIComponent(displayedDate);
 const shareUrl=()=>liffId?'https://liff.line.me/'+encodeURIComponent(liffId)+'?date='+encodeURIComponent(displayedDate):readerUrl();
-const nativeShareUrl=()=> 'https://line.me/R/share?text='+encodeURIComponent('工商時報｜'+displayedDate.replaceAll('-','/')+' 每日剪報\n'+shareUrl());
 const flexShareLaunchUrl=()=>shareUrl()+'&share=1';
 let liffInitPromise=null;
 function ensureLiff(){
@@ -119,6 +118,11 @@ async function shareToLine(auto=false){
     }
     if(!window.liff.isApiAvailable('shareTargetPicker')){
       throw new Error('目前的 LINE 環境不支援 Flex 圖文分享，請從手機 LINE App 開啟這份剪報。');
+    }
+    if(autoShareRequested && auto){
+      const clean=new URL(location.href);
+      clean.searchParams.delete('share');
+      history.replaceState(null,'',clean.toString());
     }
     const result=await window.liff.shareTargetPicker([buildShareCard()],{isMultiple:true});
     if(result?.status==='success') {
@@ -197,12 +201,8 @@ try{
   document.querySelector('#zipBtn').href=zip;
   render();setMode(mode);
   if(autoShareRequested){
-    // The LINE Flex URI launches this LIFF with share=1, which invokes
-    // LINE's real shareTargetPicker immediately after LIFF and data are ready.
-    // Removing the flag prevents reopening after cancellation or reload.
-    const clean=new URL(location.href);
-    clean.searchParams.delete('share');
-    history.replaceState(null,'',clean.toString());
+    // LINE's Flex button opens this LIFF in share mode; authentication may
+    // redirect first, so the flag is removed only after login succeeds.
     void shareToLine(true);
   }
   try{
