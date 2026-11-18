@@ -71,12 +71,13 @@ const selected=query.get('date')||'';
 const validDate=/^\d{4}-\d{2}-\d{2}$/.test(selected);
 let images=[], lightbox=null, mode='flow', displayedDate='';
 const liffId=String(window.CTEE_LIFF_ID||'').trim();
+const shareLiffId=String(window.CTEE_SHARE_LIFF_ID||'').trim();
 const shareButton=document.querySelector('#showShareBtn');
 const shareFeedback=document.querySelector('#shareFeedback');
 const autoShareRequested=query.get('share')==='1';
 const readerUrl=()=>location.origin+location.pathname+'?date='+encodeURIComponent(displayedDate);
 const shareUrl=()=>liffId?'https://liff.line.me/'+encodeURIComponent(liffId)+'?date='+encodeURIComponent(displayedDate):readerUrl();
-const flexShareLaunchUrl=()=>shareUrl()+'&share=1';
+const flexShareLaunchUrl=()=>shareLiffId?'https://liff.line.me/'+encodeURIComponent(shareLiffId)+'?date='+encodeURIComponent(displayedDate)+'&count='+images.length:shareUrl()+'&share=1';
 let liffInitPromise=null;
 function ensureLiff(){
   if(!liffId||!window.liff)return Promise.reject(new Error('LIFF not configured'));
