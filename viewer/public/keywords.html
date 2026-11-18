@@ -323,7 +323,9 @@ async function reviewIssue(item,decision){
         sha:content.sha,
         branch:"master"
       });
-      await loadWords();
+      words.splice(0,words.length,...latest);
+      selected.clear();
+      renderWords();
       notice("已核准並提交 GitHub：keywords.txt 已更新為 "+latest.length+" 個關鍵字。",true);
     }else{
       notice("申請已駁回，不修改 keywords.txt。",true);
