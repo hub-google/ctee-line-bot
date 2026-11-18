@@ -49,10 +49,12 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 @media(max-width:540px){main{padding:22px 12px 64px}.panel{padding:18px 15px;border-radius:15px}.head{padding:12px 14px}.head .ghost{padding:8px 9px}.keyword-tools{align-items:stretch}.keyword-tools input{width:100%;max-width:none}.counter{align-self:center}.titlewrap{gap:10px}.iconbox{width:36px;height:36px}.review{padding:13px}.stats{gap:7px}}
 .keyword-review-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--border)}.keyword-review-row>.word{margin-right:auto;font-size:14px;padding:7px 11px}.keyword-review-row .btn{min-width:65px}
 .keyword-review-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--border)}.keyword-review-row>.word{margin-right:auto;font-size:14px;padding:7px 11px}.keyword-review-row .btn{min-width:63px}.request-note{font-size:12px;color:var(--muted);margin:8px 0 12px}.admin-status{font-size:12px;color:var(--muted)}.request-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.notice{margin-top:14px}.review-empty{padding:16px 0;color:var(--muted)}
+
+.keyword-review-row{display:flex;align-items:center;gap:10px;border:1px solid var(--border);background:#fff;border-radius:12px;margin-top:10px;padding:12px 14px;flex-wrap:wrap}.keyword-review-row .word{margin-right:auto}.keyword-review-row .btn{min-width:70px}.admin-form{max-width:460px}.admin-form input{margin-bottom:9px}.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.review-title{font-size:14px;font-weight:700}.status-message{font-size:13px;margin:12px 0;color:var(--muted)}.muted-mini{color:var(--muted);font-size:12px}.admin-item{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.admin-item input{flex:1;min-width:150px}.review-type{margin:12px 0 4px;font-size:13px}
 </style>
 </head>
 <body>
-<header><div class="head"><a class="brand" href="./">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a></div></div></header>
+<header><div class="head"><a class="brand" href="./">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a><button type="button" class="ghost" id="adminEntry">管理者專區</button></div></div></header>
 <main>
 <h1>追蹤關鍵字</h1>
 <p class="subtitle">目前追蹤的關鍵字以 GitHub 的 keywords.txt 為準。</p>
@@ -64,7 +66,28 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 <div class="keyword-tools"><input type="search" id="wordSearch" name="ctee_keyword_search" autocomplete="off" autocapitalize="none" spellcheck="false" readonly placeholder="搜尋追蹤中的關鍵字…" aria-label="搜尋關鍵字"></div>
 <div class="chips" id="keywordChips" aria-live="polite"></div>
 </section>
-<p class="subtitle">線上關鍵字申請及審核目前暫停，已移除原收件服務。</p>
+<section id="adminArea" class="hidden">
+<section class="panel">
+<div class="topline"><div><h2>GitHub 關鍵字管理</h2><p class="help">核准後立即寫入 GitHub keywords.txt，不透過其他平台或排程。</p></div><button type="button" id="closeAdmin" class="btn gray">關閉</button></div>
+<div id="adminLogin" class="admin-form">
+<label for="adminPin">管理金鑰</label><input type="password" id="adminPin" autocomplete="off" placeholder="輸入管理金鑰">
+<label for="githubAuth">GitHub 儲存庫寫入授權</label><input type="password" id="githubAuth" autocomplete="off" spellcheck="false" placeholder="僅授權此儲存庫的 GitHub Token">
+<p class="muted-mini">為避免公開帳號寫入權限，授權僅保存在這個分頁的記憶體中，不會儲存在網站或傳給其他服務。</p>
+<button type="button" class="btn blue full" id="adminLoginBtn">進入管理</button>
+</div>
+<div id="adminPanel" class="hidden">
+<div class="action-row"><button id="adminRefresh" class="btn gray" type="button">重新讀取 GitHub</button><button id="adminLogout" class="btn gray" type="button">登出</button></div>
+<label for="newKeyword">提出新增項目</label>
+<div class="admin-item"><input type="text" id="newKeyword" autocomplete="off" maxlength="40" placeholder="每次輸入一個關鍵字"><button type="button" id="queueAdd" class="btn outlineblue">加入待審核</button></div>
+<label for="removeKeyword">提出刪除項目</label>
+<div class="admin-item"><input type="search" id="removeKeyword" autocomplete="off" maxlength="40" placeholder="輸入目前清單的關鍵字"><button type="button" id="queueRemove" class="btn outlinered">加入待審核</button></div>
+<p class="muted-mini">以下項目可分別核准或駁回。核准只處理該一個字詞，GitHub 確認成功後才更新畫面。</p>
+<h3 class="review-title">逐項審核</h3><div id="reviewQueue"></div>
+</div>
+<div id="adminNotice" role="status" aria-live="polite"></div>
+</section>
+</section>
+<p class="subtitle">匿名網頁送出目前無法使用；GitHub Pages 本身不提供匿名寫入介面。</p>
 <p class="footer">工商時報每日剪報 · GitHub 關鍵字清單</p>
 </main>
 <script type="module">
@@ -122,5 +145,155 @@ window.addEventListener("pageshow",()=>{if(!activated){filter.value="";render()}
     list.appendChild(msg);
   }
 })();
+
+const qAdmin=id=>document.getElementById(id);
+let githubToken="";
+let reviewBusy=false;
+const reviewQueue=[];
+function notifyAdmin(text,ok=false){
+  const box=qAdmin("adminNotice");box.replaceChildren();
+  if(!text)return;
+  const el=document.createElement("div");el.className="alert "+(ok?"success":"error");
+  el.textContent=text;box.appendChild(el);
+}
+function startAdmin(open){
+  qAdmin("adminArea").classList.toggle("hidden",!open);
+  if(open)qAdmin("adminArea").scrollIntoView({block:"start",behavior:"smooth"});
+}
+qAdmin("adminEntry").onclick=()=>startAdmin(qAdmin("adminArea").classList.contains("hidden"));
+qAdmin("closeAdmin").onclick=()=>startAdmin(false);
+function decodeBase64(encoded){
+  const str=atob(encoded.replace(/\s/g,""));
+  return new TextDecoder().decode(Uint8Array.from(str,c=>c.charCodeAt(0)));
+}
+function encodeBase64(value){
+  const bytes=new TextEncoder().encode(value);
+  let str="";for(const x of bytes)str+=String.fromCharCode(x);
+  return btoa(str);
+}
+async function githubApi(path,method="GET",body){
+  if(!githubToken)throw Error("請先輸入 GitHub 授權");
+  const resp=await fetch("https://api.github.com/repos/"+REPO+path,{
+    method,
+    headers:{
+      "Authorization":"Bearer "+githubToken,
+      "Accept":"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28",
+      "Content-Type":"application/json"
+    },
+    body:body===undefined?undefined:JSON.stringify(body),
+    cache:"no-store"
+  });
+  const data=await resp.json().catch(()=>({}));
+  if(!resp.ok)throw Error("GitHub HTTP "+resp.status+"："+(data.message||"請檢查儲存庫權限"));
+  return data;
+}
+async function getGithubKeywords(){
+  const file=await githubApi("/contents/keywords.txt?ref=master");
+  if(typeof file.content!=="string"||typeof file.sha!=="string")throw Error("GitHub 清單回傳格式錯誤");
+  const current=decodeBase64(file.content).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!current.length)throw Error("GitHub 關鍵字清單不可為空");
+  return {sha:file.sha,current};
+}
+async function reloadGithubKeywords(){
+  const {current}=await getGithubKeywords();
+  words.splice(0,words.length,...current);render();
+}
+qAdmin("adminLoginBtn").onclick=async()=>{
+  notifyAdmin("");
+  if(qAdmin("adminPin").value.trim()!=="9"){notifyAdmin("管理金鑰錯誤");return}
+  githubToken=qAdmin("githubAuth").value.trim();
+  qAdmin("githubAuth").value="";
+  if(!githubToken){notifyAdmin("需要 GitHub 儲存庫寫入授權");return}
+  try{
+    await reloadGithubKeywords();
+    qAdmin("adminPin").value="";
+    qAdmin("adminLogin").classList.add("hidden");
+    qAdmin("adminPanel").classList.remove("hidden");
+    notifyAdmin("已連接 GitHub。核准時會直接更新 keywords.txt。",true);
+  }catch(err){githubToken="";notifyAdmin(err.message)}
+};
+qAdmin("adminLogout").onclick=()=>{
+  githubToken="";reviewQueue.length=0;renderReviewQueue();
+  qAdmin("adminPanel").classList.add("hidden");
+  qAdmin("adminLogin").classList.remove("hidden");
+  notifyAdmin("已登出，寫入授權已從頁面記憶體清除。",true);
+};
+qAdmin("adminRefresh").onclick=async()=>{
+  try{await reloadGithubKeywords();notifyAdmin("GitHub 清單已更新。",true)}
+  catch(err){notifyAdmin(err.message)}
+};
+function addToReview(operation){
+  if(!githubToken){notifyAdmin("請先連接 GitHub");return}
+  const input=qAdmin(operation==="add"?"newKeyword":"removeKeyword");
+  const value=input.value.normalize("NFKC").trim();
+  if(!value||value.length>40||/[\r\n<>]/.test(value)){notifyAdmin("請輸入有效的關鍵字（最多 40 字）");return}
+  if(operation==="add"&&words.includes(value)){notifyAdmin("這個關鍵字已經在清單中");return}
+  if(operation==="remove"&&!words.includes(value)){notifyAdmin("刪除的關鍵字不在目前清單");return}
+  if(reviewQueue.some(x=>x.word===value&&x.operation===operation)){
+    notifyAdmin("這個項目已在待審核清單");return;
+  }
+  reviewQueue.push({word:value,operation});
+  input.value="";notifyAdmin("");renderReviewQueue();
+}
+qAdmin("queueAdd").onclick=()=>addToReview("add");
+qAdmin("queueRemove").onclick=()=>addToReview("remove");
+function renderReviewQueue(){
+  const root=qAdmin("reviewQueue");root.replaceChildren();
+  if(!reviewQueue.length){
+    const p=document.createElement("p");p.className="muted-mini";p.textContent="目前沒有待審核項目";root.append(p);return;
+  }
+  for(const item of reviewQueue){
+    const row=document.createElement("div");row.className="keyword-review-row";
+    const label=document.createElement("span");
+    label.className="word "+(item.operation==="add"?"add":"remove");
+    label.textContent=(item.operation==="add"?"＋ 新增 ":"－ 刪除 ")+item.word;
+    const approve=document.createElement("button");
+    approve.type="button";approve.className="btn blue";approve.textContent="核准";
+    approve.disabled=reviewBusy;approve.onclick=()=>applyReview(item);
+    const reject=document.createElement("button");
+    reject.type="button";reject.className="btn red";reject.textContent="駁回";
+    reject.disabled=reviewBusy;
+    reject.onclick=()=>{
+      reviewQueue.splice(reviewQueue.indexOf(item),1);
+      renderReviewQueue();
+      notifyAdmin("已駁回「"+item.word+"」，未修改 GitHub。",true);
+    };
+    row.append(label,approve,reject);root.append(row);
+  }
+}
+async function applyReview(item){
+  if(reviewBusy||!githubToken)return;
+  reviewBusy=true;renderReviewQueue();notifyAdmin("");
+  try{
+    for(let attempt=0;attempt<3;attempt++){
+      const {sha,current}=await getGithubKeywords();
+      const exists=current.includes(item.word);
+      if(item.operation==="add"&&exists)throw Error("這個新增關鍵字已存在於 GitHub");
+      if(item.operation==="remove"&&!exists)throw Error("這個刪除關鍵字已不存在於 GitHub");
+      const latest=item.operation==="add"?[...current,item.word]:current.filter(x=>x!==item.word);
+      if(!latest.length)throw Error("不能刪除最後一個關鍵字");
+      try{
+        await githubApi("/contents/keywords.txt","PUT",{
+          message:"keywords: approve "+item.operation+" "+item.word+" from website",
+          content:encodeBase64(latest.join("\n")+"\n"),
+          branch:"master",sha
+        });
+        const verified=await getGithubKeywords();
+        const applied=verified.current.includes(item.word);
+        if(applied!==(item.operation==="add"))throw Error("GitHub 未確認關鍵字寫入結果");
+        words.splice(0,words.length,...verified.current);render();
+        reviewQueue.splice(reviewQueue.indexOf(item),1);
+        notifyAdmin("已核准「"+item.word+"」，GitHub keywords.txt 已立即更新。",true);
+        return;
+      }catch(err){
+        if(attempt<2&&/GitHub HTTP (409|422)/.test(err.message))continue;
+        throw err;
+      }
+    }
+  }catch(err){notifyAdmin("未核准成功："+err.message+"。請核對 GitHub 後重試。")}
+  finally{reviewBusy=false;renderReviewQueue()}
+}
+renderReviewQueue();
 </script>
 </body></html>
