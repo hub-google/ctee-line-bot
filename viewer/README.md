@@ -25,7 +25,7 @@
 - LIFF 分享的網址固定所選日期 `?date=YYYY-MM-DD`，歷史新聞也能分享；無需新增 Worker、付費服務或背景伺服器。
 - LINE_VALIDATE_ONLY=1 可呼叫官方 validate/push API 驗證卡片而不實際傳送；正式每日任務為實際 Push。
 - 手動執行 workflow_dispatch 會照常推播，可能重複傳送當天的訊息，請只在必要時使用。
-- 2026-11-18 修復推播：`viewer/send_preview.py` 的專用 push 觸發器會重建當日剪報、更新 GitHub Pages 並重推一張 LINE Flex，應避免在此文件或其他檔案變動時意外觸發重送；之後如無需自動重推，應移除此 push 觸發器，保留每日 cron 與手動觸發即可。
+- 2026-11-18 修復推播：已使用單次 push 觸發重建當日剪報及 LINE Flex 重送，隨後移除該臨時觸發器。正式排程恢復只有每日 cron 與手動 `workflow_dispatch`，一般修改程式不會自動重送新聞。
 
 ## 備份
 
