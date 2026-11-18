@@ -1,0 +1,51 @@
+name: Publish keyword suggestion page
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - viewer/public/keywords.html
+      - viewer/send_preview.py
+      - .github/workflows/daily_ctee.yml
+      - ctee_downloader_cloud.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ctee-keyword-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update persistent gallery with keyword page
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin viewer-archive
+          git worktree add --detach /tmp/ctee-keyword-site origin/viewer-archive
+          cp viewer/public/keywords.html /tmp/ctee-keyword-site/viewer/public/keywords.html
+          cd /tmp/ctee-keyword-site
+          git add viewer/public/keywords.html
+          if ! git diff --cached --quiet; then
+            git commit -m "site: publish keyword suggestion page"
+            git push origin HEAD:viewer-archive
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: /tmp/ctee-keyword-site/viewer/public/
+      - name: Deploy keyword website
+        id: deployment
+        uses: actions/deploy-pages@v4
