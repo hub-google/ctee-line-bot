@@ -21,13 +21,17 @@ for daydir in sorted(archive.iterdir(), reverse=True):
         for item in pics:
             if not (root / item["src"]).is_file():
                 raise FileNotFoundError(item["src"])
-        if not (daydir / "latest.zip").exists():
-            raise FileNotFoundError("latest.zip")
+        zip_name = f"工商時報_{daydir.name.replace('-', '')}.zip"
+        zip_path = f"archive/{daydir.name}/{zip_name}"
+        if data.get("zip") != zip_path:
+            raise ValueError(f"Unexpected ZIP filename in manifest: {data.get('zip')}")
+        if not (root / zip_path).is_file():
+            raise FileNotFoundError(zip_path)
         dates.append({
             "date": daydir.name,
             "date_label": data.get("date_label", daydir.name),
             "count": len(pics),
-            "zip": data.get("zip", f"archive/{daydir.name}/latest.zip"),
+            "zip": zip_path,
         })
     except Exception as exc:
         raise RuntimeError(f"Archived issue {daydir.name} damaged; refusing to remove anything: {exc}") from exc
