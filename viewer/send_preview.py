@@ -112,13 +112,22 @@ message = {
         }
     }
 }
-payload = {"to": user_id, "messages": [message]}
+validate_only = os.environ.get("LINE_VALIDATE_ONLY") == "1"
+endpoint = (
+    "https://api.line.me/v2/bot/message/validate/push"
+    if validate_only else "https://api.line.me/v2/bot/message/push"
+)
+payload = {"messages": [message]} if validate_only else {"to": user_id, "messages": [message]}
 response = session.post(
-    "https://api.line.me/v2/bot/message/push",
+    endpoint,
     json=payload,
     headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
     timeout=20,
 )
 if response.status_code != 200:
-    raise RuntimeError(f"LINE Flex push rejected: HTTP {response.status_code} {response.text[:1000]}")
-print(f"[LINE] Daily HQ Flex push accepted: HTTP {response.status_code}", flush=True)
+    kind = "validation" if validate_only else "push"
+    raise RuntimeError(f"LINE Flex {kind} rejected: HTTP {response.status_code} {response.text[:1000]}")
+if validate_only:
+    print(f"[LINE] Production Flex validation passed (no message sent): HTTP {response.status_code}", flush=True)
+else:
+    print(f"[LINE] Daily HQ Flex push accepted: HTTP {response.status_code}", flush=True)
