@@ -50,175 +50,107 @@ input:focus,textarea:focus{border-color:#7aa6e6;box-shadow:0 0 0 3px #2364cb1a}t
 </style>
 </head>
 <body>
-<header><div class="head"><a href="./" class="brand">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a><button type="button" id="adminEntry" class="ghost">管理者專區</button></div></div></header>
-<div id="busy" class="hidden">處理中…</div>
+<header><div class="head"><a href="./" class="brand">工商時報每日剪報<small>CTEE · News Tracker</small></a><div class="header-actions"><a href="./" class="ghost">閱讀剪報</a><a href="https://github.com/hub-google/ctee-line-bot/issues?q=is%3Aissue+is%3Aopen" target="_blank" rel="noopener noreferrer" class="ghost">管理者專區（GitHub）</a></div></div></header>
 <main>
-<section id="publicView">
-<h1>調整追蹤關鍵字</h1><p class="subtitle">哪些新聞值得追蹤，由你來建議。無須登入帳號，提交後由管理者審核。</p>
-<form id="suggestionForm">
+<h1>調整追蹤關鍵字</h1>
+<p class="subtitle">追蹤清單直接來自 GitHub 的 keywords.txt。新增、刪除建議會建立 GitHub Issue，管理員審核後直接修改 GitHub 清單。</p>
 <section class="panel">
-<div class="topline"><div class="titlewrap"><span class="iconbox blue">＋</span><div><h2>新增關鍵字</h2><p class="help">加入你希望每天收到的新聞主題</p></div></div></div>
+<div class="topline"><div class="titlewrap"><span class="iconbox blue">＋</span><div><h2>新增關鍵字</h2><p class="help">一列一個詞彙；不需要的欄位可直接刪掉</p></div></div></div>
 <div id="addRows"></div>
-<div class="section-foot"><button type="button" id="addRowButton" class="btn outlineblue">＋ 新增一個關鍵字</button></div>
-<p class="tip">每個欄位輸入一個關鍵字，不需要的欄位可按右側刪除。</p>
+<button id="addRowButton" type="button" class="btn outlineblue">＋ 新增關鍵字</button>
 </section>
 <section class="panel">
-<div class="topline"><div class="titlewrap"><span class="iconbox red">－</span><div><h2>移除關鍵字</h2><p class="help">從目前正在追蹤的清單中勾選</p></div></div><span id="selectedCount" class="small-count">已選 0 個</span></div>
-<div class="keyword-tools"><input type="text" id="wordSearch" placeholder="搜尋目前追蹤的關鍵字…" aria-label="搜尋追蹤關鍵字"><span id="allCount" class="counter">載入中…</span></div>
+<div class="topline"><div class="titlewrap"><span class="iconbox red">－</span><div><h2>刪除關鍵字</h2><p class="help">點選目前 GitHub 清單中的字詞</p></div></div><span id="selectedCount" class="small-count">已選 0 個</span></div>
+<div class="keyword-tools"><input id="wordSearch" type="text" placeholder="搜尋追蹤中的關鍵字" aria-label="搜尋關鍵字"><span id="allCount" class="counter">載入中</span></div>
 <div id="keywordChips" class="chips" aria-live="polite"></div>
-<p class="tip">點一下即選取，再點一次取消。未勾選的關鍵字會保持不變。</p>
 </section>
-<section class="panel">
-<div class="topline"><div class="titlewrap"><div><h2>送出你的建議</h2><p class="help">請填姓名，讓管理者知道是誰提出的建議。</p></div></div></div>
-<label for="name">你的姓名 <span style="color:#c23946">*</span></label><input id="name" type="text" maxlength="40" autocomplete="name" placeholder="請輸入姓名" required>
-<label for="reason">建議原因 <span style="font-weight:450;color:var(--muted)">（選填）</span></label><textarea id="reason" maxlength="500" placeholder="例如：希望看到更多保險與醫療相關新聞"></textarea>
-<div id="summary" class="summary">可只新增、只移除，或同時提出兩種建議。</div>
-<div id="formMessage" role="status"></div>
-<div style="margin-top:17px"><button type="submit" id="submitButton" class="btn blue full submit">送出關鍵字建議 →</button></div>
-<p class="tip" style="text-align:center">送出後不會立即更改追蹤清單，需經管理者核准才會生效。</p>
-</section>
+<form id="suggestionForm" class="panel">
+<div class="topline"><div><h2>送出關鍵字申請</h2><p class="help">系統會帶入你選擇的字詞，前往 GitHub 送出審核申請。</p></div></div>
+<label for="requester">你的姓名</label><input id="requester" type="text" maxlength="40" required placeholder="請輸入姓名">
+<label for="reason">建議原因（選填）</label><textarea id="reason" maxlength="500" placeholder="例如：希望追蹤新的保險商品新聞"></textarea>
+<div class="summary" id="summary">請先新增或選擇要刪除的關鍵字。</div>
+<div id="status" role="status"></div>
+<button type="submit" class="btn blue full submit" style="margin-top:14px">前往 GitHub 送出申請</button>
+<p class="tip">GitHub 不允許匿名訪客直接寫入儲存庫，因此送出申請需要登入 GitHub。網頁不會儲存 GitHub Token，也不使用 Supabase 或其他資料庫。</p>
 </form>
+<section class="panel">
+<div class="topline"><div><h2>已送出的申請</h2><p class="help">申請與核准紀錄保留在 GitHub Issues；無需登入即可查閱公開內容。</p></div><a class="btn gray" href="https://github.com/hub-google/ctee-line-bot/issues" target="_blank" rel="noopener noreferrer">查看全部</a></div>
+<div id="issueList" class="chips"><span class="tip">讀取 GitHub 紀錄中…</span></div>
+<p class="tip">管理者可在 Issue 留言 <code>/approve</code> 或 <code>/reject</code>，由 GitHub Actions 驗證權限並更新 keywords.txt。</p>
 </section>
-<section id="adminView" class="hidden">
-<div id="loginCard" class="panel login">
-<div class="centerhead"><span class="lock">⌑</span><h1>管理者專區</h1><p class="subtitle" style="margin:7px 0 0">輸入管理金鑰後查看及審核所有建議</p></div>
-<form id="loginForm"><label for="adminPin">管理金鑰</label><input type="password" id="adminPin" autocomplete="off" placeholder="請輸入管理金鑰" required><div id="loginMessage" role="alert"></div><button type="submit" class="btn blue full" style="margin-top:14px">進入管理後台</button></form>
-</div>
-<div id="adminDashboard" class="hidden">
-<div class="admin-head"><div><h1>建議審核</h1><p class="subtitle" style="margin-bottom:0">審核結果將套用至下一次新聞追蹤</p></div><button id="logoutButton" type="button" class="btn gray">登出</button></div>
-<div class="stats"><div class="stat"><strong id="pendingCount">0</strong><span>待審核</span></div><div class="stat"><strong id="approvedCount">0</strong><span>已核准</span></div><div class="stat"><strong id="rejectedCount">0</strong><span>已駁回</span></div></div>
-<div class="panel"><div class="topline"><div><h2>關鍵字調整申請</h2><p class="help">每筆顯示姓名、建議內容與送出時間</p></div><button type="button" id="refreshButton" class="btn gray">重新整理</button></div>
-<div class="tabs" id="reviewTabs"><button data-status="pending" class="active" type="button">待審核</button><button data-status="approved" type="button">已核准</button><button data-status="rejected" type="button">已駁回</button></div>
-<div id="reviewList" aria-live="polite"></div><div id="adminMessage" role="status"></div>
-</div>
-</div>
-</section>
-<p class="footer">工商時報新聞追蹤 · 關鍵字調整建議中心</p>
+<p class="footer">工商時報新聞追蹤｜GitHub 單一資料來源</p>
 </main>
 <script type="module">
-const API="https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords";
-const qs=(s,root=document)=>root.querySelector(s);
-const words=[],selected=new Set();
-let adminPin="",suggestions=[],reviewTab="pending",working=false;
-const show=(s,visible)=>qs(s).classList.toggle("hidden",!visible);
-const node=(tag,cls,content)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(content!==undefined)n.textContent=content;return n};
-function message(target,text,ok=false){const root=qs(target);root.replaceChildren();if(!text)return;root.append(node("div","alert "+(ok?"success":"error"),text))}
-function busy(v){working=v;show("#busy",v);qs("#submitButton").disabled=v}
-async function api(body){
- const r=await fetch(API+(body?"":"?action=keywords"),body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{cache:"no-store"});
- const data=await r.json().catch(()=>({error:"回應格式錯誤"}));
- if(!r.ok)throw Error(data.error||"連線失敗");
- return data;
+const REPO="hub-google/ctee-line-bot";
+const ROOT="https://github.com/"+REPO;
+const q=s=>document.querySelector(s);
+const words=[];
+const selected=new Set();
+const node=(tag,cls,content)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(content!==undefined)el.textContent=content;return el};
+function newRow(value=""){
+  const row=node("div","add-row"),field=node("input"),del=node("button","remove-row","×");
+  field.type="text";field.maxLength=40;field.value=value;field.placeholder="請輸入關鍵字";field.setAttribute("aria-label","新增關鍵字");field.addEventListener("input",updateSummary);
+  del.type="button";del.setAttribute("aria-label","刪除此列");del.onclick=()=>{row.remove();updateSummary()};
+  row.append(field,del);q("#addRows").append(row);updateSummary();return field;
 }
-function terms(){return [...new Set([...qs("#addRows").querySelectorAll("input")].map(i=>i.value.normalize("NFKC").trim()).filter(Boolean))]}
+function added(){return [...new Set([...q("#addRows").querySelectorAll("input")].map(x=>x.value.normalize("NFKC").trim()).filter(Boolean))]}
 function updateSummary(){
- const adds=terms();
- const summary=qs("#summary");
- summary.textContent=(adds.length||selected.size)?"預計提交：新增 "+adds.length+" 個關鍵字、移除 "+selected.size+" 個關鍵字。":"可只新增、只移除，或同時提出兩種建議。";
- qs("#selectedCount").textContent="已選 "+selected.size+" 個";
-}
-function addRow(value=""){
- const wrapper=node("div","add-row"),input=node("input"),remove=node("button","remove-row","×");
- input.type="text";input.maxLength=40;input.placeholder="請輸入要新增的關鍵字";input.value=value;input.setAttribute("aria-label","建議新增關鍵字");
- input.addEventListener("input",updateSummary);
- remove.type="button";remove.title="刪除這一列";remove.setAttribute("aria-label","刪除這一列");
- remove.addEventListener("click",()=>{wrapper.remove();updateSummary()});
- wrapper.append(input,remove);qs("#addRows").append(wrapper);updateSummary();return input;
+  const a=added();
+  q("#summary").textContent="新增 "+a.length+" 個、移除 "+selected.size+" 個關鍵字。";
+  q("#selectedCount").textContent="已選 "+selected.size+" 個";
 }
 function renderWords(){
- const filter=qs("#wordSearch").value.trim();
- const area=qs("#keywordChips");area.replaceChildren();
- for(const term of words.filter(x=>x.includes(filter))){
-  const chip=node("button","chip"+(selected.has(term)?" selected":""),undefined);
-  chip.type="button";chip.setAttribute("aria-pressed",String(selected.has(term)));
-  const checked=node("span","check",selected.has(term)?"✓":"");
-  chip.append(checked,document.createTextNode(term));
-  chip.addEventListener("click",()=>{if(selected.has(term))selected.delete(term);else selected.add(term);renderWords();updateSummary()});
-  area.append(chip);
- }
- if(!area.childElementCount)area.append(node("span","tip","找不到符合的關鍵字"));
- qs("#allCount").textContent="共 "+words.length+" 個";
- updateSummary();
+  q("#keywordChips").replaceChildren();
+  const filter=q("#wordSearch").value.trim();
+  for(const word of words.filter(x=>x.includes(filter))){
+    const ch=node("button","chip"+(selected.has(word)?" selected":""));
+    ch.type="button";ch.setAttribute("aria-pressed",String(selected.has(word)));
+    ch.append(node("span","check",selected.has(word)?"✓":""),document.createTextNode(word));
+    ch.onclick=()=>{selected.has(word)?selected.delete(word):selected.add(word);renderWords();updateSummary()};
+    q("#keywordChips").append(ch);
+  }
+  if(!q("#keywordChips").childElementCount)q("#keywordChips").append(node("span","tip","沒有相符關鍵字"));
+  q("#allCount").textContent="共 "+words.length+" 個";
+  updateSummary();
 }
 async function loadWords(){
- const data=await api();words.splice(0,words.length,...(data.keywords||[]));
- for(const old of [...selected])if(!words.includes(old))selected.delete(old);
- renderWords();
+  try{
+    const r=await fetch("https://raw.githubusercontent.com/"+REPO+"/master/keywords.txt?ts="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw Error("GitHub HTTP "+r.status);
+    const rows=(await r.text()).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    if(!rows.length)throw Error("GitHub 清單是空的");
+    words.splice(0,words.length,...rows);renderWords();
+  }catch(err){q("#allCount").textContent="讀取失敗";q("#keywordChips").replaceChildren(node("div","alert error","無法從 GitHub 載入關鍵字："+err.message));}
 }
-function publicMode(){
- show("#publicView",true);show("#adminView",false);adminPin="";qs("#adminPin").value="";qs("#adminDashboard").classList.add("hidden");
- qs("#loginCard").classList.remove("hidden");qs("#adminEntry").textContent="管理者專區";window.scrollTo({top:0,behavior:"smooth"});
-}
-function adminMode(){
- show("#publicView",false);show("#adminView",true);qs("#adminEntry").textContent="返回建議頁";window.scrollTo({top:0,behavior:"smooth"});
-}
-qs("#adminEntry").addEventListener("click",()=>qs("#adminView").classList.contains("hidden")?adminMode():publicMode());
-qs("#addRowButton").addEventListener("click",()=>addRow().focus());
-qs("#wordSearch").addEventListener("input",renderWords);
-qs("#suggestionForm").addEventListener("submit",async(e)=>{
- e.preventDefault();if(working)return;
- const adds=terms(),remove=[...selected],name=qs("#name").value.trim(),reason=qs("#reason").value.trim();
- if(!adds.length&&!remove.length){message("#formMessage","請至少新增或移除一個關鍵字");return}
- if(adds.length+remove.length>20){message("#formMessage","一次最多提交 20 個關鍵字");return}
- if(adds.some(x=>words.includes(x))){message("#formMessage","你新增的關鍵字已存在追蹤清單中");return}
- busy(true);message("#formMessage","");
- try{
-  await api({action:"submit",name,reason,add:adds,remove});
-  qs("#name").value="";qs("#reason").value="";qs("#addRows").replaceChildren();addRow();
-  selected.clear();renderWords();message("#formMessage","建議已送出，等待管理者審核。",true);
- }catch(err){message("#formMessage",err.message)}finally{busy(false)}
+q("#addRowButton").onclick=()=>newRow().focus();
+q("#wordSearch").addEventListener("input",renderWords);
+q("#suggestionForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const add=added(),remove=[...selected],name=q("#requester").value.trim(),reason=q("#reason").value.trim();
+  if(!name||!add.length&&!remove.length){q("#status").replaceChildren(node("div","alert error","請填姓名，並至少選擇一個關鍵字變更。"));return;}
+  if(add.length+remove.length>20){q("#status").replaceChildren(node("div","alert error","一次最多變更 20 個關鍵字。"));return;}
+  if(add.some(x=>words.includes(x))||add.some(x=>remove.includes(x))){q("#status").replaceChildren(node("div","alert error","新增項目不能與現有或刪除項目重複。"));return;}
+  const list=x=>x.length?x.map(w=>"- "+w).join("\n"):"（無）";
+  const body="## 申請人\n"+name+"\n\n## 新增關鍵字\n"+list(add)+"\n\n## 移除關鍵字\n"+list(remove)+"\n\n## 建議原因\n"+(reason||"（無）")+"\n";
+  const url=new URL(ROOT+"/issues/new");
+  url.searchParams.set("title","[關鍵字申請] "+name+"（新增 "+add.length+"、移除 "+remove.length+"）");
+  url.searchParams.set("body",body);
+  location.assign(url.toString());
 });
-qs("#loginForm").addEventListener("submit",async(e)=>{
- e.preventDefault();const pin=qs("#adminPin").value.trim();
- message("#loginMessage","");
- try{
-  const res=await api({action:"admin-list",pin});adminPin=pin;suggestions=res.items||[];
-  show("#loginCard",false);show("#adminDashboard",true);reviewTab="pending";renderReviews();
- }catch(err){message("#loginMessage",err.message)}
-});
-qs("#logoutButton").addEventListener("click",()=>{adminPin="";suggestions=[];show("#loginCard",true);show("#adminDashboard",false);qs("#adminPin").value=""});
-qs("#refreshButton").addEventListener("click",refreshReviews);
-qs("#reviewTabs").addEventListener("click",e=>{const btn=e.target.closest("button[data-status]");if(btn){reviewTab=btn.dataset.status;renderReviews()}});
-async function refreshReviews(){
- if(!adminPin)return;
- try{const response=await api({action:"admin-list",pin:adminPin});suggestions=response.items||[];renderReviews();message("#adminMessage","");}
- catch(err){message("#adminMessage",err.message)}
+async function loadIssues(){
+  try{
+    const r=await fetch("https://api.github.com/repos/"+REPO+"/issues?state=all&per_page=100",{cache:"no-store"});
+    if(!r.ok)throw Error("HTTP "+r.status);
+    const data=(await r.json()).filter(x=>!x.pull_request&&x.title.startsWith("[關鍵字申請] "));
+    q("#issueList").replaceChildren();
+    if(!data.length){q("#issueList").append(node("span","tip","目前沒有 GitHub 關鍵字申請紀錄。"));return;}
+    for(const item of data.slice(0,20)){
+      const tag=item.state==="open"?"待審核":item.state_reason==="not_planned"?"已駁回":"已核准";
+      const link=node("a","chip",tag+"｜"+item.title.replace("[關鍵字申請] ",""));
+      link.href=item.html_url;link.target="_blank";link.rel="noopener noreferrer";q("#issueList").append(link);
+    }
+  }catch(err){q("#issueList").replaceChildren(node("span","tip","無法載入 GitHub 申請紀錄，可按「查看全部」開啟。"));}
 }
-async function review(id,decision){
- if(working)return;
- if(!confirm(decision==="approved"?"確定核准？正式追蹤關鍵字將隨之更新。":"確定駁回這筆建議？"))return;
- busy(true);
- try{await api({action:"review",pin:adminPin,id,decision});await Promise.all([refreshReviews(),loadWords()]);message("#adminMessage","審核完成，關鍵字清單已更新。",true)}
- catch(err){message("#adminMessage",err.message)}finally{busy(false)}
-}
-function renderReviews(){
- const counter=s=>suggestions.filter(x=>x.status===s).length;
- qs("#pendingCount").textContent=counter("pending");
- qs("#approvedCount").textContent=counter("approved");
- qs("#rejectedCount").textContent=counter("rejected");
- for(const btn of qs("#reviewTabs").querySelectorAll("button"))btn.classList.toggle("active",btn.dataset.status===reviewTab);
- const root=qs("#reviewList");root.replaceChildren();
- const items=suggestions.filter(x=>x.status===reviewTab);
- if(!items.length){root.append(node("p","tip",reviewTab==="pending"?"目前沒有待審核建議":"目前沒有符合狀態的紀錄"));return}
- for(const entry of items){
-  const card=node("article","review"),top=node("div","review-top"),identity=node("div");
-  identity.append(node("strong","",entry.requester_name),node("time","",new Date(entry.created_at).toLocaleString("zh-TW",{timeZone:"Asia/Taipei",hour12:false})));
-  const tag=node("span","tag "+entry.status,{"pending":"待審核","approved":"已核准","rejected":"已駁回"}[entry.status]);
-  top.append(identity,tag);card.append(top);
-  const line=node("div","review-words");
-  for(const term of entry.add_terms||[])line.append(node("span","word add","＋ "+term));
-  for(const term of entry.remove_terms||[])line.append(node("span","word remove","－ "+term));
-  card.append(line);
-  if(entry.reason)card.append(node("div","reason","原因："+entry.reason));
-  if(entry.status==="pending"){
-   const actions=node("div","review-actions");
-   const approve=node("button","btn blue","✓ 核准"),reject=node("button","btn gray","× 駁回");
-   approve.type=reject.type="button";approve.addEventListener("click",()=>review(entry.id,"approved"));reject.addEventListener("click",()=>review(entry.id,"rejected"));actions.append(approve,reject);card.append(actions);
-  }
-  root.append(card);
- }
-}
-addRow();loadWords().catch(err=>{qs("#keywordChips").textContent="無法讀取目前關鍵字";qs("#allCount").textContent="讀取失敗";message("#formMessage","關鍵字資料暫時無法載入，請重新整理頁面："+err.message)});
+newRow();loadWords();loadIssues();
 </script>
-</body>
-</html>
+</body></html>
