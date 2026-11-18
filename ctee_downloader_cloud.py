@@ -21,34 +21,32 @@ PASSWORD = os.getenv("CTEE_PASS")
 LINE_ACCESS_TOKEN = os.getenv("LINE_ACCESS_TOKEN")
 LINE_USER_ID = os.getenv("LINE_USER_ID")
 
-KEYWORDS_URL = "https://raw.githubusercontent.com/hub-google/ctee-line-bot/master/keywords.txt"
+KEYWORDS_API_URL = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/ctee-keywords"
 KEYWORDS_EDIT_URL = "https://hub-google.github.io/ctee-line-bot/keywords.html"
-def load_keywords():
-    """Only use the GitHub keywords.txt file; local checkout is a fallback."""
-    try:
-        r = requests.get(KEYWORDS_URL, timeout=8)
-        if r.status_code == 200:
-            kws = [line.strip() for line in r.text.splitlines() if line.strip()]
-            if kws:
-                print(f"[關鍵字] 已從 GitHub 讀取 {len(kws)} 個關鍵字。")
-                return kws
-    except Exception as e:
-        print(f"[關鍵字] GitHub 讀取失敗 ({e})，準備讀取本地備用檔案...")
-    
-    # 本地備用：讀取倉庫裡的 keywords.txt
-    try:
-        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "keywords.txt")
-        if os.path.exists(local_path):
-            with open(local_path, "r", encoding="utf-8") as f:
-                kws = [line.strip() for line in f.readlines() if line.strip()]
-            if kws:
-                print(f"[關鍵字] 已從本地檔案讀取 {len(kws)} 個關鍵字。")
-                return kws
-    except:
-        pass
 
-    print("[警告] 找不到任何關鍵字名單，程式將結束。")
-    return []
+def load_keywords():
+    """Supabase is the single authoritative keyword source; fail closed on API errors."""
+    response = requests.get(KEYWORDS_API_URL, timeout=15, headers={"Accept": "application/json"})
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict) or data.get("ok") is not True:
+        raise RuntimeError("Supabase 關鍵字 API 未確認成功")
+    raw = data.get("keywords")
+    if not isinstance(raw, list):
+        raise RuntimeError("Supabase 關鍵字資料格式不正確")
+    keywords = []
+    for word in raw:
+        if not isinstance(word, str):
+            raise RuntimeError("Supabase 關鍵字資料包含非文字")
+        word = word.strip()
+        if not word or len(word) > 40:
+            raise RuntimeError("Supabase 關鍵字資料包含不合法字詞")
+        if word not in keywords:
+            keywords.append(word)
+    if not keywords:
+        raise RuntimeError("Supabase 追蹤關鍵字為空，停止本次剪報，避免誤抓")
+    print(f"[關鍵字] 已從 Supabase 讀取 {len(keywords)} 個追蹤字詞。")
+    return keywords
 
 BASE_URL = "https://readers.ctee.com.tw/cm"
 TARGET_PAPER = "工商時報"
