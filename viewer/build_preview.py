@@ -89,6 +89,7 @@ def build_site():
     if not viewer_items:
         raise RuntimeError("所有圖片皆無法讀取，停止部署與推播。")
     data = {
+        "build_ref": os.getenv("GITHUB_SHA", ""),
         "date_label": DATE_LABEL,
         "date": DATE.strftime("%Y-%m-%d"),
         "total": len(viewer_items),
