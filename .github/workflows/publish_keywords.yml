@@ -6,6 +6,7 @@ on:
     paths:
       - viewer/public/keywords.html
       - viewer/public/liff-config.js
+      - viewer/public/index.html
       - supabase/functions/ctee-keywords/index.ts
       - viewer/send_preview.py
       - .github/workflows/daily_ctee.yml
@@ -71,9 +72,9 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin viewer-archive
           git worktree add --detach /tmp/ctee-keyword-site origin/viewer-archive
-          cp viewer/public/keywords.html viewer/public/liff-config.js /tmp/ctee-keyword-site/viewer/public/
+          cp viewer/public/index.html viewer/public/keywords.html viewer/public/liff-config.js /tmp/ctee-keyword-site/viewer/public/
           cd /tmp/ctee-keyword-site
-          git add viewer/public/keywords.html viewer/public/liff-config.js
+          git add viewer/public/index.html viewer/public/keywords.html viewer/public/liff-config.js
           if ! git diff --cached --quiet; then
             git commit -m "site: publish keyword suggestion page"
             git push origin HEAD:viewer-archive
