@@ -44,6 +44,16 @@ jobs:
           Path("/tmp/ctee-keywords.mjs").write_text(code, encoding="utf-8")
           PY
           node --check /tmp/ctee-keywords.mjs
+          python - <<'PY'
+          from pathlib import Path
+          html = Path("viewer/public/index.html").read_text(encoding="utf-8")
+          assert '<script type="module">' in html
+          script = html.split('<script type="module">', 1)[1].split("</script>", 1)[0]
+          assert "https://line.me/R/share?text=" in script
+          assert "sharePanel" not in script
+          Path("/tmp/ctee-viewer.mjs").write_text(script, encoding="utf-8")
+          PY
+          node --check /tmp/ctee-viewer.mjs
       - name: Verify Supabase-only frontend and crawler, and live read API
         run: |
           python - <<'PY'
