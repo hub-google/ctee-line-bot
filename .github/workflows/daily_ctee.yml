@@ -37,30 +37,23 @@ jobs:
           python -m py_compile viewer/build_preview.py viewer/update_history.py viewer/send_preview.py
           python -c "from pathlib import Path; h=Path('viewer/public/index.html').read_text(); Path('/tmp/ctee-viewer.mjs').write_text(h.split('<script type=\"module\">',1)[1].split('</script>',1)[0])"
           node --check /tmp/ctee-viewer.mjs
-      - name: Publish LIFF public ID configuration (not an access token)
-        env:
-          LIFF_ID: ${{ secrets.LIFF_ID }}
+      - name: Verify public reader and fast-share LIFF configuration
         run: |
           python - <<'PY'
-          import json
-          import os
-          import re
+          import json, re
           from pathlib import Path
-          config_path = Path("viewer/public/liff-config.js")
-          public_id = ""
-          if config_path.exists():
-              raw = config_path.read_text(encoding="utf-8").strip()
-              prefix = "window.CTEE_LIFF_ID = "
-              if not raw.startswith(prefix) or not raw.endswith(";"):
-                  raise SystemExit("Invalid public LIFF config file")
-              public_id = json.loads(raw[len(prefix):-1]).strip()
-          value = public_id or os.environ.get("LIFF_ID", "").strip()
-          if value and not re.fullmatch(r"[A-Za-z0-9_-]+", value):
-              raise SystemExit("Invalid LIFF_ID format")
-          Path("viewer/public/liff-config.js").write_text(
-              "window.CTEE_LIFF_ID = " + json.dumps(value) + ";\n", encoding="utf-8"
-          )
-          print("LIFF enabled" if value else "LIFF_ID missing: sharing needs LINE setup")
+          config = Path("viewer/public/liff-config.js").read_text(encoding="utf-8")
+          ids = {}
+          for key in ("CTEE_LIFF_ID", "CTEE_SHARE_LIFF_ID"):
+              match = re.search(r'^window\.' + key + r'\s*=\s*("[^"]+")\s*;\s*$', config, re.M)
+              if not match:
+                  raise SystemExit("Missing or invalid public " + key)
+              ids[key] = json.loads(match.group(1))
+              if not re.fullmatch(r"2012346974-[A-Za-z0-9]+", ids[key]):
+                  raise SystemExit("Invalid LINE Login channel in " + key)
+          if ids["CTEE_LIFF_ID"] == ids["CTEE_SHARE_LIFF_ID"]:
+              raise SystemExit("Reader and fast-share LIFF apps must be separate")
+          print("Verified reader LIFF and dedicated fast-share LIFF public IDs.")
           PY
       - name: Capture original-quality newspaper images
         env:
@@ -79,7 +72,7 @@ jobs:
           issue_date=$(TZ=Asia/Taipei date +%F)
           mkdir -p "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date"
           rsync -a --delete "viewer/public/archive/$issue_date/" "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date/"
-          cp viewer/public/index.html viewer/public/keywords.html viewer/public/data.json viewer/public/robots.txt viewer/public/liff-config.js /tmp/ctee-gallery-history/viewer/public/
+          cp viewer/public/index.html viewer/public/share.html viewer/public/keywords.html viewer/public/data.json viewer/public/robots.txt viewer/public/liff-config.js /tmp/ctee-gallery-history/viewer/public/
           python viewer/update_history.py /tmp/ctee-gallery-history/viewer/public
           cd /tmp/ctee-gallery-history
           git add viewer/public
