@@ -15,13 +15,16 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
-## 關鍵字來源與自動同步
+## 關鍵字管理：GitHub 單一資料來源
 
-- 管理介面核准後，Supabase `ctee_keyword_settings` 立即成為正式關鍵字清單。爬蟲 `ctee_downloader_cloud.py` 的 `load_keywords()` 先讀取 Supabase API；API 失敗時才退回 GitHub `keywords.txt`，最後退回本地檔案。
-- `keywords.txt` 是追蹤清單的 **GitHub 備份**，不是審核後的即時主資料。新增 `.github/workflows/sync_ctee_keywords.yml`，約每 15 分鐘（GitHub 排程可能延遲）由 GitHub Actions 透過公開、只讀的 Supabase Edge API 讀取已核准關鍵字，更新 `master/keywords.txt`；內容相同時不會 commit。
-- `viewer/sync_keywords.py` 嚴格驗證回應狀態、格式、數量、去重、revision；若 API 失敗、回應不完整或資料不合法就退出，**保留原始備份不覆蓋**。同步使用既有 GitHub Actions `GITHUB_TOKEN`，不需要公開金鑰、登入帳號、額外 Worker 或付費服務。
-- 以管理後台「已核准」清單與 Supabase API 為準；GitHub 備份可能落後最多一個排程間隔加排程延遲。需要立即更新 GitHub 可在 GitHub Actions 執行 `Sync CTEE Approved Keywords Backup` 的 `Run workflow`，不會重新抓報紙或推送 LINE。
-- 2026-11-18 已將核准項目 `test2` 補入 `master/keywords.txt`，與 Supabase 正式清單一致。
+- **唯一正式關鍵字來源**：`master/keywords.txt`。每日爬蟲先讀 `https://raw.githubusercontent.com/hub-google/ctee-line-bot/master/keywords.txt`；連線失敗時讀取當次 GitHub checkout 中的 `keywords.txt`。不再呼叫 Supabase。
+- **公開網站**：`https://hub-google.github.io/ctee-line-bot/keywords.html`。直接讀 GitHub 原始文字檔，提供新增、刪除詞彙及送出申請介面。
+- **訪客送出**：目前用 GitHub Issues 儲存申請，會跳至 GitHub 預填表單。GitHub 要求登入才能發 Issue；純 GitHub Pages 靜態網頁無法安全實現完全匿名的共用寫入收件匣。若未來要匿名申請，必須增加可承擔驗證和限流的外部後端，不能把 GitHub Token 或固定密碼放在公開 JavaScript。
+- **網站審核**：點「管理者專區」，輸入界面管理金鑰和擁有本儲存庫 `Contents: Read/Write`、`Issues: Read/Write` 的 GitHub fine-grained token（僅保留在當前分頁記憶體）。管理者點「核准並更新 keywords.txt」時，前端會讀最新 GitHub 檔案 SHA、檢查衝突並用 GitHub Contents API 更新 `master/keywords.txt`，成功後關閉 Issue；「駁回」不修改關鍵字。
+- **權限安全**：管理金鑰只是進入管理頁的簡單 UI 門檻，*真正的 GitHub 寫入授權由 GitHub Token 權限決定*。不要把 Token 寫入網站、公開儲存庫、網頁原始碼或使用者可取得的 Secrets。
+- 亦提供 GitHub Actions `.github/workflows/review_keyword_issues.yml` 作替代審核通道：GitHub 有寫入權限的協作者可於申請 Issue 留言 `/approve` 或 `/reject`，由 GitHub Actions 驗證協作者權限後更新 `keywords.txt`。網頁管理區則是直接寫入的主要入口。
+- 舊版 Supabase 關鍵字 API、審核資料表與同步排程已停用／刪除；其他專案的共用 Supabase 資源不受影響。
+- 2026-11-18 曾核准的 `test2` 已經寫入 `master/keywords.txt`，不會因停用舊審核系統而遺失。
 
 ## LINE
 
