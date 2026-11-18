@@ -32,6 +32,11 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
           python -m playwright install --with-deps chromium
+      - name: Validate Python and browser module syntax
+        run: |
+          python -m py_compile viewer/build_preview.py viewer/update_history.py viewer/send_preview.py
+          python -c "from pathlib import Path; h=Path('viewer/public/index.html').read_text(); Path('/tmp/ctee-viewer.mjs').write_text(h.split('<script type=\"module\">',1)[1].split('</script>',1)[0])"
+          node --check /tmp/ctee-viewer.mjs
       - name: Capture original-quality newspaper images
         env:
           CTEE_USER: ${{ secrets.CTEE_USER }}
