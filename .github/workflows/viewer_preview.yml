@@ -9,9 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: ctee-viewer-preview
@@ -40,20 +38,23 @@ jobs:
           CTEE_PASS: ${{ secrets.CTEE_PASS }}
           IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
         run: python viewer/build_preview.py
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Upload reader
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: viewer/public
-      - name: Publish reader
-        id: publish
-        uses: actions/deploy-pages@v4
-      - name: Verify live reader and send LINE test
+      - name: Publish new viewer only to preview branch
+        shell: bash
+        run: |
+          set -e
+          git config user.name github-actions\[bot\]
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin viewer-preview
+          git worktree add /tmp/preview-files origin/viewer-preview
+          cp -R viewer/public/. /tmp/preview-files/viewer/public/
+          cd /tmp/preview-files
+          git add viewer/public
+          git commit -m 'preview: publish clipping reader output'
+          git push origin HEAD:viewer-preview
+      - name: Verify external static site and notify LINE
         env:
-          SITE_URL: ${{ steps.publish.outputs.page_url }}
+          SITE_URL: https://ctee-viewer-preview.pages.dev/
+          EXPECTED_REF: ${{ github.sha }}
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
         run: python viewer/send_preview.py
