@@ -5,6 +5,8 @@ on:
     branches: [master]
     paths:
       - viewer/public/keywords.html
+      - viewer/keyword_gateway/worker.js
+      - viewer/keyword_gateway/test_worker.mjs
       - keywords.txt
       - viewer/send_preview.py
       - .github/workflows/daily_ctee.yml
@@ -56,6 +58,8 @@ jobs:
           assert "id=\"wordSearch\"" in page and "readonly placeholder" in page
           assert 'fetchJSON("/submit"' in page
           assert 'fetchJSON("/review"' in page
+          assert 'window.setInterval' not in page
+          assert 'data.synced!==true' in page
           assert "supabase.co" not in page
           assert "KEYWORDS_API_URL" not in crawler
           assert "supabase.co" not in page + crawler
