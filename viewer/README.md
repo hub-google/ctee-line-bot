@@ -56,3 +56,10 @@
 ## 內容權限
 
 GitHub Pages 與公開 Git 倉庫的新聞圖片不具私密存取控制。請先確保這些新聞剪報的保存、散布、公開託管符合內容來源授權條款。
+
+## 手機原圖下載修正（2026-11-19）
+
+- `viewer/public/index.html` 中列表每張「下載原圖」、PhotoSwipe 全螢幕「下載原圖」、頂端「下載全部剪報」都使用同一個 `saveFileInPage()`。
+- 同源圖片或 ZIP 先以 `fetch` 讀取原始 bytes，檢查 HTTP 狀態與 JPG/ZIP 檔頭，透過 `Blob` 與 `URL.createObjectURL` 建立 HTML5 `a[download]`，不呼叫 `liff.openWindow`、`openExternalBrowser`、`location.assign` 或新分頁。頁面提供下載中及錯誤狀態；ZIP 維持 `工商時報_YYYYMMDD.zip`。
+- 此為瀏覽器可支援的頁內下載方式，LINE LIFF 在 Android 使用系統 WebView、在 iOS 使用 WKWebView；**部分 LINE 版本可能禁止 Blob 下載或不提供作業系統下載管理器**，網頁不能繞過此原生限制，也無法回報系統是否已實際存檔。未做 Android/iOS LINE 實機驗收前，不宣稱所有裝置皆可直接寫入本機下載資料夾。
+- 2026-11-19 已確認正式 GitHub Pages 含 `ctee-download-inline-v2` 版下載程式，該日 `39` 張來源原圖及 ZIP 檔可由網站讀取；使用 `resend_ctee_line.yml` 對原有 LINE 對象重送一次 Flex，GitHub Actions run `44461666395` 成功，LINE Push API 回傳 HTTP 200。當次沒有重爬或複製歷史剪報。一次性觸發設定與檔案已刪除，恢復 `workflow_dispatch` 手動重發。
