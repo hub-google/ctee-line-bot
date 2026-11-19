@@ -161,7 +161,7 @@ function browserDownloadUrl(url){
   const target=new URL(url,location.href);
   const archivePath=new URL('archive/',location.href).pathname;
   if(target.origin!==location.origin || !target.pathname.startsWith(archivePath) ||
-    !/\\.(?:jpe?g|png|zip)$/i.test(target.pathname))throw Error('不正確的剪報下載網址');
+    !/\.(?:jpe?g|png|zip)$/i.test(target.pathname))throw Error('不正確的剪報下載網址');
   const page=new URL('download.html',location.href);
   page.searchParams.set('file',target.pathname);
   return page.href;
