@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>工商時報｜下載原始剪報</title>
+  <style>
+    :root{color-scheme:light}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f6f7f8;color:#25313a;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif;min-height:100vh;display:grid;place-items:center;padding:22px}
+    main{background:white;border:1px solid #e1e7e6;box-shadow:0 12px 36px #182b3810;border-radius:18px;width:min(100%,470px);padding:30px 24px}
+    h1{font-size:21px;margin:0 0 12px}
+    #filename{font-size:13px;color:#176e5c;font-weight:650;overflow-wrap:anywhere}
+    #status{font-size:14px;color:#687482;margin:15px 0 18px}
+    #downloadBtn{display:block;width:100%;border:0;border-radius:12px;background:#176e5c;color:white;font:700 15px/1.4 inherit;padding:14px;cursor:pointer}
+    #downloadBtn:disabled{opacity:.5;cursor:progress}
+    .note{font-size:12px;color:#687482;margin:12px 0 0}
+  </style>
+</head>
+<body>
+<main>
+  <h1>工商時報｜下載剪報</h1>
+  <div id="filename"></div>
+  <p id="status" role="status" aria-live="polite">正在準備原始檔案…</p>
+  <button type="button" id="downloadBtn" disabled>下載檔案</button>
+  <p class="note">若瀏覽器未自動下載，可再按一次「下載檔案」。</p>
+</main>
+<script>
+// ctee-external-download-v1: executed only after leaving the LINE WebView.
+const statusNode=document.querySelector('#status');
+const fileNode=document.querySelector('#filename');
+const button=document.querySelector('#downloadBtn');
+let preparedUrl=null;
+let filename='';
+function fail(message){
+  statusNode.textContent='無法下載：'+message;
+  button.disabled=true;
+}
+function savePreparedFile(){
+  if(!preparedUrl)return;
+  const link=document.createElement('a');
+  link.href=preparedUrl;
+  link.download=filename;
+  link.style.display='none';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  statusNode.textContent='已交由瀏覽器處理下載，請查看手機的下載紀錄。';
+}
+button.addEventListener('click',savePreparedFile);
+async function prepareDownload(){
+  const params=new URLSearchParams(location.search);
+  const path=params.get('file')||'';
+  const archivePrefix=new URL('./archive/',location.href).pathname;
+  const target=new URL(path,location.origin);
+  if(!path.startsWith('/')||target.origin!==location.origin||
+     !target.pathname.startsWith(archivePrefix)||
+     !/\.(?:jpe?g|png|zip)$/i.test(target.pathname)){
+    throw new Error('無效的剪報下載連結');
+  }
+  filename=decodeURIComponent(target.pathname.split('/').pop()||'');
+  if(!filename)throw new Error('檔案名稱為空');
+  fileNode.textContent=filename;
+  const response=await fetch(target.href,{credentials:'same-origin'});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  const blob=await response.blob();
+  if(blob.size===0)throw new Error('原始檔案內容為空');
+  const magic=new Uint8Array(await blob.slice(0,4).arrayBuffer());
+  if(/\.zip$/i.test(filename) && !(magic[0]===80&&magic[1]===75))
+    throw new Error('來源並非 ZIP 檔案');
+  if(/\.jpe?g$/i.test(filename) && !(magic[0]===255&&magic[1]===216&&magic[2]===255))
+    throw new Error('來源並非 JPG 原圖');
+  preparedUrl=URL.createObjectURL(blob);
+  button.disabled=false;
+  button.textContent='下載 '+(/\.zip$/i.test(filename)?'全部剪報 ZIP':'原圖 JPG');
+  savePreparedFile();
+  window.addEventListener('pagehide',()=>{if(preparedUrl)URL.revokeObjectURL(preparedUrl)},{once:true});
+}
+prepareDownload().catch(err=>fail(err?.message||String(err)));
+</script>
+</body>
+</html>
