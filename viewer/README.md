@@ -16,13 +16,21 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
+## LINE 內建瀏覽器下載操作（2026-11-19）
+
+- **主要使用情境是從 LINE 聊天室點開 LIFF**。LINE 官方說明 LIFF 的 WebView **不支援 HTML `download` 屬性**，所以用 Blob + `a.download` 不能視為已儲存成功，也不能宣稱純前端可偷偷背景下載到相簿、下載目錄。
+- 閱讀器進入 LINE 後，點「下載原圖」會開啟**原頁內**的操作視窗，不跳外部瀏覽器。支援 **「傳到目前 LINE 聊天室，再由 LINE 相片檢視器儲存」**（使用 `liff.sendMessages`；只在使用者主動點選後才傳送；若原始對話是群組則會分享給該群組）。LINE 可能重新壓縮圖片，這不是原始 bytes 備份。
+- 需要**完整原始 JPG**或**整批 ZIP**時，提供**明確選擇**的「使用手機瀏覽器下載」動作，絕不自動強制切換。ZIP 原檔名稱保持 `工商時報_YYYYMMDD.zip`，與歷史歸檔一致。純 LIFF 目前沒有官方穩定的網頁 API 可不經使用者操作寫入手機下載目錄，不能保證 LINE 內可直接背景保存 ZIP。
+- 支援複製原圖或 ZIP 連結。一般 Chrome/Safari 等非 LINE 瀏覽器維持原頁 `fetch` + Blob 的下載流程；顯示「已交給瀏覽器」，不再顯示「已存檔」或「已送出下載請求」當作下載成功。
+- 真機驗收：需在 Android LINE LIFF、iOS LINE LIFF、外部 Chrome/Safari 分別檢查單張原圖、聊天室圖片儲存、ZIP。GitHub Actions 只驗證語法及網站部署，**不能代替 LINE 真機儲存驗收**。
+- LINE 官方文件：https://developers.line.biz/en/docs/liff/differences-between-liff-browser-and-external-browser/
+
 ## 閱讀器批次下載及指定日期重跑（2026-11-19）
 
-- 下載全部剪報只保留閱讀器操作區的一個按鈕，不再於頁首重複；選取任一歷史日期時使用該日期歸檔的 `archive/YYYY-MM-DD/工商時報_YYYYMMDD.zip`。
-- LINE LIFF 內點擊下載會呼叫 `liff.openWindow({external:true})` 將 ZIP 交給手機預設瀏覽器；一般 LINE 內建 WebView 使用 LINE 支援的 `openExternalBrowser=1`；一般瀏覽器保留原生 ZIP 下載。是否真的儲存成功仍由手機瀏覽器／作業系統決定，無法在頁面強制繞過系統下載限制。
-- 爬蟲、原圖建置和 GitHub Actions 都支援 `CTEE_TARGET_DATE=YYYY-MM-DD`，workflow 手動觸發時可選填 `target_date`。沒指定仍照台灣當日執行。歷史重跑會以既有歸檔的文章網址補足歷史版面連結，但原圖仍逐篇重新擷取，不複製舊圖冒充重跑。
-- 2026-11-18 已成功重跑並發布 31 張依 SHA-256 去重的原圖及當日 ZIP；驗證後 LINE Push API 回傳 HTTP 200，GitHub Actions run `44343340866`。舊日期資料仍留在同一日期資料夾，不建立第二份。
-- 正式排程維持每日 06:00（台灣時間）；一次性的 11/18 自動觸發入口在驗證完成後移除。
+- 下載全部剪報只保留閱讀器操作區的一個按鈕；選取任一歷史日期時使用該日期歸檔的 `archive/YYYY-MM-DD/工商時報_YYYYMMDD.zip`。
+- 爬蟲、原圖建置和 GitHub Actions 都支援 `CTEE_TARGET_DATE=YYYY-MM-DD`；workflow 手動觸發時可選填 `target_date`。不指定仍照台灣當日執行。歷史重跑會使用既有歸檔的文章網址補足歷史版面連結，原圖仍逐篇重新擷取。
+- 2026-11-18 成功重跑及發布 31 張去重原圖與 ZIP；當日 LINE Push API HTTP 200，GitHub Actions run `44343340866`。舊日期資料保留原處，不建立第二份。
+- 正式排程每日 06:00（台灣時間）。
 
 ## 關鍵字：Supabase 單一正式來源（2026-11-18）
 
