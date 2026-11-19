@@ -23,6 +23,7 @@ reader = live("?qa=download-20261119").text
 landing = live("download.html?qa=download-20261119").text
 data = live("data.json?qa=download-20261119").json()
 assert "ctee-external-browser-download-v2" in reader, "Live reader has old download code"
+assert r'!/\.(?:jpe?g|png|zip)$/i' in reader, "Correct file extension matching is not published"
 assert "ctee-external-download-v1" in landing, "Live download page is missing"
 assert 'downloadDialog' not in reader, "Old modal is still present"
 assert 'sendPhotoToChat' not in reader, "Old LINE photo selection is still present"
