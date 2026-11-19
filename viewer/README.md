@@ -16,14 +16,13 @@
 - 日期選單及可分享的網址：https://hub-google.github.io/ctee-line-bot/?date=YYYY-MM-DD
 - 網站保存容量接近 900 MiB 時會中止新增部署以保留舊資料，沒有自動刪除政策；長期累積超過 GitHub Pages 容量上限必須更換保存方式。
 
-## LINE 內建瀏覽器下載操作（2026-11-19）
+## LINE 內建瀏覽器下載操作（2026-11-19，最新）
 
-- **主要使用情境是從 LINE 聊天室點開 LIFF**。LINE 官方說明 LIFF 的 WebView **不支援 HTML `download` 屬性**，所以用 Blob + `a.download` 不能視為已儲存成功，也不能宣稱純前端可偷偷背景下載到相簿、下載目錄。
-- 閱讀器進入 LINE 後，點「下載原圖」會開啟**原頁內**的操作視窗，不跳外部瀏覽器。支援 **「傳到目前 LINE 聊天室，再由 LINE 相片檢視器儲存」**（使用 `liff.sendMessages`；只在使用者主動點選後才傳送；若原始對話是群組則會分享給該群組）。LINE 可能重新壓縮圖片，這不是原始 bytes 備份。
-- 需要**完整原始 JPG**或**整批 ZIP**時，提供**明確選擇**的「使用手機瀏覽器下載」動作，絕不自動強制切換。ZIP 原檔名稱保持 `工商時報_YYYYMMDD.zip`，與歷史歸檔一致。純 LIFF 目前沒有官方穩定的網頁 API 可不經使用者操作寫入手機下載目錄，不能保證 LINE 內可直接背景保存 ZIP。
-- 支援複製原圖或 ZIP 連結。一般 Chrome/Safari 等非 LINE 瀏覽器維持原頁 `fetch` + Blob 的下載流程；顯示「已交給瀏覽器」，不再顯示「已存檔」或「已送出下載請求」當作下載成功。
-- 真機驗收：需在 Android LINE LIFF、iOS LINE LIFF、外部 Chrome/Safari 分別檢查單張原圖、聊天室圖片儲存、ZIP。GitHub Actions 只驗證語法及網站部署，**不能代替 LINE 真機儲存驗收**。
-- LINE 官方文件：https://developers.line.biz/en/docs/liff/differences-between-liff-browser-and-external-browser/
+- 下載全部改為單一步驟，不再顯示選項彈窗。從 LINE 開啟 LIFF 時，點 **下載原圖** 或 **下載全部剪報**，由 `liff.openWindow({external:true})` 直接跳手機外部瀏覽器；LINE 非 LIFF 情況則以 `openExternalBrowser=1` 做備援。
+- 外部瀏覽器打開本站 `download.html?file=...`，只接受同網域 `archive/` 下的 JPG/PNG/ZIP。頁面會取得原始 bytes，優先自動觸發瀏覽器下載；若手機瀏覽器阻止自動下載，只有 **「下載檔案」** 一個重試按鈕，沒有其他選擇。
+- ZIP 名稱仍是 `工商時報_YYYYMMDD.zip`，單圖使用典藏原始檔名。下載執行與實際存進手機由外部瀏覽器及作業系統決定，不能由 Web 程式假裝驗證成功。
+- `viewer/public/download.html` 必須同時被每日爬蟲部署 `daily_ctee.yml` 與網頁調整部署 `publish_keywords.yml` 複製到 `viewer-archive`，以免下次更新時失效。網頁 JavaScript 自動語法檢查，真機下載體驗仍須實測。
+- 已移除先前的傳圖片到聊天室、複製網址、頁內下載選單及 LINE 內假成功提示。
 
 ## 閱讀器批次下載及指定日期重跑（2026-11-19）
 
