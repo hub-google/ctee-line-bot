@@ -63,8 +63,23 @@ with sync_playwright() as p:
     )
     ctx.route("https://static.line-scdn.net/liff/edge/2/sdk.js",lambda r:r.fulfill(status=200, content_type="application/javascript", body=fake_liff))
     page = ctx.new_page()
-    page.goto(SITE+"?date="+day,wait_until="domcontentloaded",timeout=60000)
-    page.locator("#zipBtn:not([disabled])").wait_for(timeout=40000)
+    page.on("pageerror",lambda err:print("PAGEERROR",str(err),flush=True))
+    page.on("console",lambda msg:print("BROWSER-CONSOLE",msg.type,msg.text[:500],flush=True) if msg.type=="error" else None)
+    page.on("requestfailed",lambda req:print("FAILED-REQUEST",req.url,req.failure,flush=True))
+    response=page.goto(SITE+"?date="+day,wait_until="domcontentloaded",timeout=60000)
+    print("MOBILE VIEW",page.url,"HTTP",response.status if response else "unknown",flush=True)
+    try:
+        page.locator("#zipBtn:not([disabled])").wait_for(timeout=35000)
+    except Exception:
+        print("MOBILE DIAGNOSTICS",json.dumps({
+            "url":page.url,"title":page.title(),"headline":page.locator("#headline").all_inner_texts(),
+            "status":page.locator("#gallery .status").all_inner_texts(),
+            "buttons":page.locator("#zipBtn").all_text_contents(),
+            "disabled":page.locator("#zipBtn").get_attribute("disabled") if page.locator("#zipBtn").count() else None,
+            "body_start":page.locator("body").inner_text()[:900]
+        },ensure_ascii=False),flush=True)
+        page.screenshot(path=str(OUT/"mobile-failure.png"),full_page=True)
+        raise
     page.screenshot(path=str(OUT/"mobile-reader.png"),full_page=True)
     page.locator("#zipBtn").click()
     opened=page.evaluate("window.__openedExternal")
