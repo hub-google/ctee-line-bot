@@ -1,257 +1,321 @@
 {
-  "build_ref": "7302dada771e5cfe6de04fd92cfdaf4d2277a42a",
-  "date_label": "2026/11/18",
-  "date": "2026-11-18",
-  "total": 31,
-  "zip": "archive/2026-11-18/工商時報_20261118.zip",
+  "build_ref": "c257a8b2a97c434e449068f067a4677cce07c7cc",
+  "date_label": "2026/11/19",
+  "date": "2026-11-19",
+  "total": 39,
+  "zip": "archive/2026-11-19/工商時報_20261119.zip",
   "images": [
     {
-      "src": "archive/2026-11-18/images/20261118_01_台積電.jpg",
-      "width": 1869,
-      "height": 1181,
-      "sha256": "4b69f12622cdc300742c53d2d498d6971865de88110b2da7db21e133e7b6a63c",
-      "keyword": "台積電",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a01aa1"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_02_輝達.jpg",
-      "width": 1249,
-      "height": 759,
-      "sha256": "ea69b181938c69a12ea744360428c314f28b6902daf33151425676654b603045",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a01aa1"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_03_匯率、央行.jpg",
-      "width": 2502,
-      "height": 1336,
-      "sha256": "65444ccd908b1f93372d5b387047fcb1e4bbbc6924aadb623dae403aac33bbb2",
-      "keyword": "匯率、央行",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_04_央行.jpg",
-      "width": 1659,
-      "height": 1366,
-      "sha256": "4cb74b8ef380caf2b803d9fcbd66d2ab5dd4ce370ed49e75d3545ced8a9d7d56",
-      "keyword": "央行",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_05_台積電.jpg",
-      "width": 614,
-      "height": 831,
-      "sha256": "84468f6e2ee87b178093c9f5aa2fe0d8f8f812363cceb069800374fe9fc9eef8",
-      "keyword": "台積電",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_06_輝達.jpg",
-      "width": 1858,
-      "height": 401,
-      "sha256": "55e0d0a8fa9146eb52112162b56e23234b6c8a2791cff0be27eb89aab7961e2c",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_07_輝達.jpg",
-      "width": 614,
-      "height": 767,
-      "sha256": "8d67878706a9b38277a4f937deb9df83eb4f381695627a4f224de22ba867a0c4",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a03aa3"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_08_凱基.jpg",
-      "width": 2503,
-      "height": 1541,
-      "sha256": "e3553f1b374f0734717014bdd2b960517ea9c1ac532cc150c3d95cf71203daa5",
-      "keyword": "凱基",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a04aa4"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_09_輝達.jpg",
-      "width": 817,
-      "height": 1465,
-      "sha256": "c1f116ee8ca485f9566f20d0a24337f73ebd674e926e022613ef72f42704bb45",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a04aa4"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_10_台積電.jpg",
-      "width": 2474,
-      "height": 1572,
-      "sha256": "bb5427acec45269ff3028f633c9bdb6fd34fd6d44fbc27d96d792ecd9839bcf8",
-      "keyword": "台積電",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a06aa6"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_11_輝達.jpg",
-      "width": 2472,
-      "height": 1556,
-      "sha256": "b5ded85acba2706c0bf9e077036596a2e023eb1e04316898a983e0d67b4e584b",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a08aa8"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_12_輝達.jpg",
-      "width": 2422,
-      "height": 1054,
-      "sha256": "9399354a526021889e05c3578d4b268afc2c58fd5cde077d08b79e580c048bb3",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a08aa8"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_13_輝達.jpg",
-      "width": 1658,
-      "height": 606,
-      "sha256": "0c52663703859ae26f7587fbd472e7e8cff1b1194362ff308cf8da2d080af34f",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a09aa9"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_14_輝達.jpg",
-      "width": 2502,
-      "height": 1139,
-      "sha256": "f81d0db66450d419cdfd0a46f978fdeb3382e3618a59d82f574bb40f889055c4",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a09aa9"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_15_輝達.jpg",
-      "width": 1659,
-      "height": 699,
-      "sha256": "17a879c925290eb8bd3966489a01105626696b0431c742105974b2eaf90b6ee9",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a10aa10"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_16_金控.jpg",
+      "src": "archive/2026-11-19/images/20261119_01_輝達.jpg",
       "width": 2505,
-      "height": 1232,
-      "sha256": "030463c5fb0fcad5296ffed7bbbf094196ccaf7770e7bb7eb22d26258cbd2cdf",
-      "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a12aa12"
+      "height": 1157,
+      "sha256": "57c5ba8cd40c41a659702e357ba0f41f34718ddb381b3d4cec648ffb38c210c2",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/A01AA1"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_17_壽險.jpg",
-      "width": 1659,
-      "height": 657,
-      "sha256": "d611e5ad86a61d821d490123143c32e4bd9e91203c38472bd888277df11aa8ed",
-      "keyword": "壽險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a12aa12"
+      "src": "archive/2026-11-19/images/20261119_02_輝達.jpg",
+      "width": 1242,
+      "height": 1417,
+      "sha256": "26c22abf5bbcf659018e85ce0d33a39c59f26d758fd5d27de331e4d78b97d2d2",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/A01AA1"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_18_壽險.jpg",
-      "width": 816,
-      "height": 1464,
-      "sha256": "81558f7fa74561821691da445bbd05e68b3d2f76879d9b012f35189902af2d71",
-      "keyword": "壽險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a12aa12"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_19_金控.jpg",
+      "src": "archive/2026-11-19/images/20261119_03_匯率、壽險.jpg",
       "width": 1243,
-      "height": 1335,
-      "sha256": "e215f75dfc307f3df125de1a822e9c267247163ca4c6a26a2e92794020d96409",
-      "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a12aa12"
+      "height": 1417,
+      "sha256": "1cc54b11f5b7a9162be1e30e6e36f987a178ebe47f650e38c2cf986c35d0338c",
+      "keyword": "匯率、壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/A01AA1"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_20_金控.jpg",
-      "width": 1241,
-      "height": 1337,
-      "sha256": "53ba19c192c239020d1ade80b3a8427a87b712b640edea9c57c7957865c0cd18",
-      "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a12aa12"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_21_NVIDIA、輝達.jpg",
-      "width": 1237,
-      "height": 854,
-      "sha256": "b750cdc1f732ae68a2a25bbe0f9aed72a138ef6681a937857961c9bf285f35cd",
-      "keyword": "NVIDIA、輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a13aa13"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_22_凱基.jpg",
-      "width": 1790,
-      "height": 1110,
-      "sha256": "ca4820a415f9af3cf49da52a0b8897a4c75aca0725da6f50965bd82642a8e8f1",
-      "keyword": "凱基",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a27ab3"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_23_輝達.jpg",
-      "width": 2456,
-      "height": 768,
-      "sha256": "8eaa3eea17de561eeb64facf18973a6951741548da8320e84d6702cf0fd2f421",
+      "src": "archive/2026-11-19/images/20261119_04_輝達.jpg",
+      "width": 1832,
+      "height": 672,
+      "sha256": "7752250069a4517e464e21ff941f59452dac936f82832f3efd2c55b94794ede4",
       "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a27ab3"
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_24_輝達.jpg",
-      "width": 1064,
-      "height": 782,
-      "sha256": "06bc629b5247506f740d7aca2976355192dc8e7a4be236168b320a9bb5432464",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a27ab3"
+      "src": "archive/2026-11-19/images/20261119_05_匯率、匯銀、央行.jpg",
+      "width": 1887,
+      "height": 1336,
+      "sha256": "3bbb6a89ef4683a8c6e0aa831713dd55bf7ab441ec43f157f7664becf976a633",
+      "keyword": "匯率、匯銀、央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_25_金控.jpg",
-      "width": 1789,
-      "height": 1048,
-      "sha256": "5bcd655a86f88e371166106da85301fe4bf34e37c649a4e841cc988d8e80980a",
-      "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a29ab5"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_26_輝達.jpg",
-      "width": 1789,
-      "height": 1090,
-      "sha256": "cca4a07dd46d69bb149049273114941cb925d0d767a6682deb85a917921fd9e2",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a31ab7"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_27_輝達.jpg",
-      "width": 1064,
-      "height": 867,
-      "sha256": "4750a5715fc80708e0caee80912fb07760dd1b9087368690976853c842664a3d",
-      "keyword": "輝達",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a31ab7"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_28_金控.jpg",
-      "width": 2479,
-      "height": 1149,
-      "sha256": "2eb3742c40c2ab6b89dd7fb07bed84bbd4b4e28373e372d9957b27fafc06bb08",
-      "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a31ab7"
-    },
-    {
-      "src": "archive/2026-11-18/images/20261118_29_央行.jpg",
-      "width": 816,
-      "height": 1289,
-      "sha256": "bb2ed0d4c64ca4c313f8452ca2039290e7f63388d7c10a89f1bff95ea9744cb8",
+      "src": "archive/2026-11-19/images/20261119_06_央行.jpg",
+      "width": 1256,
+      "height": 1022,
+      "sha256": "af2067d566b2c6d3dfea7c6eb4fb73ea780a05b1640dda4f931911a04ac369a5",
       "keyword": "央行",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a39ac3"
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_30_產險.jpg",
+      "src": "archive/2026-11-19/images/20261119_07_金控.jpg",
+      "width": 1879,
+      "height": 939,
+      "sha256": "ea20cf37302bb5812628656898ceab566b552e682829a7aa01bc92a2398888ed",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_08_輝達.jpg",
+      "width": 1881,
+      "height": 1052,
+      "sha256": "4ce7fc0e808d65f0215d15efa46823f8b55a8c3f89ebabdcb3bec7e00baa75ad",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_09_台積電、輝達.jpg",
+      "width": 930,
+      "height": 659,
+      "sha256": "0e0d61c6938e80a0e409f8a22c62c0556696c4f4d7e66d681f124620b8e304e1",
+      "keyword": "台積電、輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_10_NVIDIA、輝達.jpg",
+      "width": 931,
+      "height": 659,
+      "sha256": "9cd15bea31ea1b0be0dab008cd2dd9d0116e22d4a2f6ac9c7d97b234ede6dbc1",
+      "keyword": "NVIDIA、輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_11_台積電、輝達.jpg",
+      "width": 1247,
+      "height": 649,
+      "sha256": "d9a23bdf11b9770963ce1a99445a7b06c40e9b264c86b5b68de0b1d15cb41dab",
+      "keyword": "台積電、輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_12_NVIDIA、輝達.jpg",
+      "width": 615,
+      "height": 646,
+      "sha256": "d7c6bafb4642d713f9109fb24faf239571837c005f508da25b501d5baaedac70",
+      "keyword": "NVIDIA、輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_13_輝達.jpg",
+      "width": 2514,
+      "height": 1232,
+      "sha256": "d0dceac51bd23bde057ef765812dc4277d2daa668444fb65a0e861f37d776bd4",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a04aa4"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_14_央行.jpg",
+      "width": 695,
+      "height": 731,
+      "sha256": "e87396da0ddfa0fff25e16eb9514d9b8ab15a877b3ea96fff641e888bad5f1df",
+      "keyword": "央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_15_人壽、國泰人壽、壽險.jpg",
+      "width": 2503,
+      "height": 1457,
+      "sha256": "df81087a583b1aeb157918be35b3ba41a23df28ab1aa897f4f50fc49eac2ab35",
+      "keyword": "人壽、國泰人壽、壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a09aa9"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_16_人壽、國泰人壽、壽險.jpg",
+      "width": 2502,
+      "height": 1882,
+      "sha256": "c513244fe03605d431fca90ea3f6fbfa996fbb12389573beabd60a10ad8091ab",
+      "keyword": "人壽、國泰人壽、壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a10aa10"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_17_凱基.jpg",
+      "width": 1210,
+      "height": 2009,
+      "sha256": "56fde3943b8da6d24618897e7ff2d9f4df278306967bbe1238b13cbd8803e926",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a10aa10"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_18_輝達.jpg",
       "width": 1659,
-      "height": 1175,
-      "sha256": "b1307e07b3aa53d657239db2eb9f9c89026ec286868328cdd26d8f8ee249d63b",
-      "keyword": "產險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a39ac3"
+      "height": 811,
+      "sha256": "e40e9d1189dc7e9b615dc09540eaecddde6c6d36a2d230ef77e170aa14a51447",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a13aa13"
     },
     {
-      "src": "archive/2026-11-18/images/20261118_31_壽險.jpg",
-      "width": 2495,
-      "height": 1230,
-      "sha256": "e3c621e5d00b35112290ac453eae405664b702309259b0b1a01e2ec69f831490",
-      "keyword": "壽險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261118/a41ac5"
+      "src": "archive/2026-11-19/images/20261119_19_輝達.jpg",
+      "width": 1659,
+      "height": 770,
+      "sha256": "f4505d378fe0c10c0463d78ba9d1cd3112396d4e3f99a889bf129ef649a0c6e8",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a13aa13"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_20_輝達.jpg",
+      "width": 1661,
+      "height": 1121,
+      "sha256": "9cdb89ad1f497026b36569866c57854af4d2b213d736fc6c2e077e97aa314e30",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a15aa15"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_21_外幣.jpg",
+      "width": 2503,
+      "height": 1398,
+      "sha256": "3b4719bac50ff804c9718fbc11c9fb35217cbe0550caec93b4b7699ed22daa82",
+      "keyword": "外幣",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a15aa15"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_22_外幣、央行.jpg",
+      "width": 1659,
+      "height": 560,
+      "sha256": "d4bf2fbbac399bcfc5cd8bedae8fd36d8e5563987cbcac802169e769099d73b7",
+      "keyword": "外幣、央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a15aa15"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_23_產險.jpg",
+      "width": 1659,
+      "height": 1118,
+      "sha256": "072fe8b5a0d367a44e993b8a2902ad26de2f0fcfa96e115b6d1013a15615588b",
+      "keyword": "產險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a15aa15"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_24_金控.jpg",
+      "width": 1443,
+      "height": 1542,
+      "sha256": "d6a94d03f3a5eb1fb1705cdbe369a4c2fa3a55e0d738878b39edcc767b064842",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a15aa15"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_25_金控.jpg",
+      "width": 1242,
+      "height": 1449,
+      "sha256": "7d25038844f6514aa5914a9ad0655f3dc4b5216dc9779511fc53f8da9c146fa0",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a15aa15"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_26_輝達.jpg",
+      "width": 1659,
+      "height": 817,
+      "sha256": "42d51bb51eb4bafe90bed42c265852a7fc93e21fe02d082b8a3bafde5d6bcf18",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a17aa17"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_27_凱基.jpg",
+      "width": 1789,
+      "height": 1078,
+      "sha256": "7f8b7b62faf0bbbe8627d5fa120906659efe739505d3627dde21e8c20a9f8239",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a27ab3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_28_輝達.jpg",
+      "width": 2525,
+      "height": 812,
+      "sha256": "8d7ea4b15e63e77a63c47f5a600f375ab5b02975a0124e645062b8ab9355b2a0",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a27ab3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_29_金控.jpg",
+      "width": 1064,
+      "height": 925,
+      "sha256": "dd4573673316f37393100f6a6be862bacef3ef3de288f2fb7f8af0e57345eb1a",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a29ab5"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_30_NVIDIA、輝達.jpg",
+      "width": 1784,
+      "height": 1167,
+      "sha256": "243b3a212141324da7ca936d87397ad915b018993fcfc50810cf43b276b92381",
+      "keyword": "NVIDIA、輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a29ab5"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_31_金控.jpg",
+      "width": 2477,
+      "height": 1069,
+      "sha256": "6df4d43195db1fc8e479d751244e262ebb912b3d58b18ad41d2a7890a1b32864",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a31ab7"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_32_凱基.jpg",
+      "width": 1158,
+      "height": 699,
+      "sha256": "e11a6dbc5808caae80fc4e189962ae4afeee822ac91b5239a3adb16392352a80",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a31ab7"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_33_央行.jpg",
+      "width": 2514,
+      "height": 758,
+      "sha256": "b50f98bc840e413e24ebc65b3066d3b41088010a8be912d111b200c9fea89b84",
+      "keyword": "央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a38ac2"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_34_產險.jpg",
+      "width": 985,
+      "height": 1130,
+      "sha256": "c63bbf795bc04b8f8c8e0d0eeba4f222f62ca2bc2f43c3561c2267cd1aa6775c",
+      "keyword": "產險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a38ac2"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_35_輝達.jpg",
+      "width": 1659,
+      "height": 1085,
+      "sha256": "83450294860717439efda4c2c713470467e9dfdb2f10974145b89d65cd615a65",
+      "keyword": "輝達",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a38ac2"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_36_人壽、壽險.jpg",
+      "width": 2503,
+      "height": 1058,
+      "sha256": "514cd1c3bb31602bbd33f74c512286c71fb1a78800df6e4cd1ce02b947e6412c",
+      "keyword": "人壽、壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a39ac3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_37_金控.jpg",
+      "width": 1659,
+      "height": 1064,
+      "sha256": "fb9fc4369e3b00b24185680d007306767c219d7a86285c13083a43c2b6ddbfb8",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a39ac3"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_38_凱基.jpg",
+      "width": 1789,
+      "height": 1146,
+      "sha256": "4fc3c998c0119e811a1ee7870cf5a1dba0eb47bc2e665c566561a1e3b775375b",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a41ac5"
+    },
+    {
+      "src": "archive/2026-11-19/images/20261119_39_金控.jpg",
+      "width": 1789,
+      "height": 748,
+      "sha256": "a2289d41dcabeed547775710b2868c2205d4a159c3ce5e50c7a31447bd29b45c",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261119/a41ac5"
     }
   ]
 }
