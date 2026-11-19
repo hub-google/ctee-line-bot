@@ -40,6 +40,15 @@
     .download[aria-busy="true"],.btn[aria-busy="true"]{opacity:.65;cursor:progress;pointer-events:none}
     .download-status{font-size:12px;color:#176e5c;margin:-8px 0 18px;overflow-wrap:anywhere}
     .download-status.error{color:#b42318}
+    .download-dialog{width:min(calc(100vw - 28px),430px);max-height:min(85vh,700px);border:0;border-radius:18px;padding:22px;background:#fff;color:var(--fg);box-shadow:0 20px 90px #0003}
+    .download-dialog::backdrop{background:#10182099}
+    .download-dialog h2{font-size:19px;line-height:1.35;margin:0 0 9px}
+    .download-dialog p{font-size:13px;color:#52616d;line-height:1.65;margin:0 0 12px;overflow-wrap:anywhere}
+    .download-choices{display:grid;gap:10px}
+    .download-choices button{border:1px solid #cbd7d7;background:#fff;border-radius:11px;padding:12px 14px;text-align:left;font-weight:650;color:#176e5c;cursor:pointer;line-height:1.35}
+    .download-choices button.primary{background:#176e5c;border-color:#176e5c;color:white}
+    .download-choices button:disabled{opacity:.6}
+    .download-dialog .close-download{width:100%;margin-top:14px;padding:10px;border:0;background:#f1f3f4;border-radius:10px;font-size:13px;font-weight:650;cursor:pointer}
     .status{padding:38px 25px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;color:var(--muted)}
     .share-feedback{display:block;width:100%;font-size:12px;color:#b42318;margin-top:6px}.share-feedback[hidden]{display:none}.footer{text-align:center;font-size:12px;color:var(--muted);padding-top:25px}
     .pswp__button--download{display:flex!important;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:650;min-width:70px}
@@ -59,6 +68,13 @@
     <div class="actions"><button id="openBtn" type="button" class="btn primary">全螢幕放大</button><button id="zipBtn" type="button" class="btn" disabled>下載全部剪報</button><button type="button" id="showShareBtn" class="btn">分享至 LINE</button></div><span id="shareFeedback" class="share-feedback" aria-live="polite" role="status" hidden></span>
   </div>
   <p id="downloadStatus" class="download-status" role="status" aria-live="polite" hidden></p>
+  <dialog id="downloadDialog" class="download-dialog" aria-labelledby="downloadHeading">
+    <h2 id="downloadHeading">儲存剪報</h2>
+    <p id="downloadDescription"></p>
+    <div id="downloadChoices" class="download-choices"></div>
+    <p id="downloadDialogStatus" role="status" aria-live="polite" style="margin-top:12px" hidden></p>
+    <button type="button" id="closeDownload" class="close-download">返回閱讀</button>
+  </dialog>
   <p class="hint">只保存一份來源原圖。連續閱讀與縮圖總覽都使用同一張原圖（以瀏覽器縮放顯示），可雙指放大、拖曳細看、左右換篇。</p>
   <div id="gallery" class="gallery flow"><div class="status">正在取得剪報，請稍候…</div></div>
   <div class="footer">獨立剪報閱讀器，不影響原本 LINE 每日推播與 Rentry。<br>新聞影像的可辨識細節仍受原始來源解析度限制。</div>
@@ -77,7 +93,17 @@ const liffId=String(window.CTEE_LIFF_ID||'').trim();
 const shareLiffId=String(window.CTEE_SHARE_LIFF_ID||'').trim();
 const zipButton=document.querySelector('#zipBtn');
 const downloadStatus=document.querySelector('#downloadStatus');
-const downloading=new Set(); // ctee-download-inline-v2
+const downloading=new Set(); // ctee-download-inline-v3
+const downloadDialog=document.querySelector('#downloadDialog');
+const downloadHeading=document.querySelector('#downloadHeading');
+const downloadDescription=document.querySelector('#downloadDescription');
+const downloadChoices=document.querySelector('#downloadChoices');
+const dialogStatus=document.querySelector('#downloadDialogStatus');
+document.querySelector('#closeDownload').addEventListener('click',()=>downloadDialog.close());
+function inLineBrowser(){
+  try{if(window.liff?.isInClient?.())return true}catch(e){}
+  return /\bLine\//i.test(navigator.userAgent);
+}
 let zipDownloadUrl='';
 const shareButton=document.querySelector('#showShareBtn');
 const shareFeedback=document.querySelector('#shareFeedback');
@@ -156,10 +182,83 @@ function originalFilename(item){
   const name=new URL(item.src,location.href).pathname.split('/').pop()||'';
   try{return decodeURIComponent(name)||'工商時報原圖.jpg'}catch{return name||'工商時報原圖.jpg'}
 }
+function realDownloadUrl(url){
+  const target=new URL(url,location.href);
+  if(target.origin!==location.origin || !target.pathname.startsWith('/ctee-line-bot/archive/'))throw Error('檔案不屬於本站的歷史歸檔');
+  return target;
+}
+function addDownloadChoice(label,action,primary=false){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className=primary?'primary':'';
+  button.textContent=label;
+  button.addEventListener('click',()=>action(button));
+  downloadChoices.append(button);
+}
+function openSystemDownload(url){
+  // This route requires an explicit selection. Never switch browsers automatically.
+  const target=realDownloadUrl(url);
+  if(window.liff && typeof window.liff.openWindow==='function'){
+    try{
+      window.liff.openWindow({url:target.href,external:true});
+      return;
+    }catch(e){console.warn('Unable to open system download through LIFF',e)}
+  }
+  const external=new URL(target.href);
+  external.searchParams.set('openExternalBrowser','1');
+  location.href=external.href;
+}
+async function sendPhotoToChat(item,control){
+  control.disabled=true;
+  dialogStatus.hidden=false;
+  dialogStatus.textContent='正在透過 LINE 傳送圖片…';
+  try{
+    await ensureLiff();
+    if(!window.liff.isInClient() || typeof window.liff.sendMessages!=='function')
+      throw new Error('這個連結不是從 LINE LIFF 聊天室開啟，無法傳回目前聊天室');
+    const url=realDownloadUrl(item.src).href;
+    await window.liff.sendMessages([{type:'image',originalContentUrl:url,previewImageUrl:url}]);
+    downloadDialog.close();
+    reportDownload('已將圖片傳送到目前 LINE 聊天室（不是已存進手機）。返回聊天後點開圖片，再按「下載」保存。LINE 可能壓縮圖片；若要完整原始 JPG，請使用系統下載。');
+  }catch(error){
+    dialogStatus.textContent='LINE 圖片傳送失敗：'+(error?.message||String(error));
+  }finally{
+    control.disabled=false;
+  }
+}
+function showLineDownloadOptions(kind,item){
+  downloadChoices.replaceChildren();
+  dialogStatus.hidden=true;
+  const isImage=kind==='image';
+  const fileName=isImage?originalFilename(item):'工商時報_'+displayedDate.replaceAll('-','')+'.zip';
+  const source=isImage?item.src:zipDownloadUrl;
+  downloadHeading.textContent=isImage?'儲存原圖':'下載全部剪報';
+  if(isImage){
+    downloadDescription.textContent='LINE 內建瀏覽器不支援直接下載。可以將圖片傳到目前 LINE 聊天室，再從 LINE 圖片檢視器儲存；若來源是群組，此動作會讓群組成員看到圖片。LINE 轉傳圖片可能改變原圖畫質。';
+    if(window.liff && typeof window.liff.sendMessages==='function'){
+      addDownloadChoice('傳到目前 LINE 聊天室，再從 LINE 儲存',button=>{void sendPhotoToChat(item,button)},true);
+    }
+  }else{
+    downloadDescription.textContent='此份剪報共 '+images.length+' 張。LINE LIFF 不支援把 ZIP 靜默寫進手機，所以在 LINE 內不能保證直接下載。完整原始畫質 ZIP 必須交給支援下載的系統瀏覽器，點一下即可啟動；閱讀頁仍保留在 LINE。';
+  }
+  addDownloadChoice('下載原始'+(isImage?' JPG':' ZIP')+'（使用手機瀏覽器）',()=>{
+    try{openSystemDownload(source)}catch(e){dialogStatus.hidden=false;dialogStatus.textContent=e.message}
+  },!isImage);
+  addDownloadChoice('複製'+(isImage?'原圖':'ZIP')+'下載網址',async()=>{
+    try{
+      const url=realDownloadUrl(source).href;
+      if(!navigator.clipboard?.writeText)throw Error('此 LINE 版本不支援複製');
+      await navigator.clipboard.writeText(url);
+      dialogStatus.hidden=false;
+      dialogStatus.textContent='已複製連結。可貼到支援下載的瀏覽器。';
+    }catch(e){dialogStatus.hidden=false;dialogStatus.textContent='複製失敗：'+e.message}
+  });
+  if(!downloadDialog.open)downloadDialog.showModal();
+}
 async function saveFileInPage(url,filename,control){
   if(!url){reportDownload('下載資料尚未載入，請稍候重試。',true);return}
-  const target=new URL(url,location.href);
-  if(target.origin!==location.origin){reportDownload('下載網址不是本站檔案，已停止下載。',true);return}
+  let target;
+  try{target=realDownloadUrl(url)}catch(e){reportDownload(e.message,true);return}
   if(downloading.has(target.href))return;
   downloading.add(target.href);
   const previousLabel=control.textContent;
@@ -167,34 +266,30 @@ async function saveFileInPage(url,filename,control){
   control.setAttribute('aria-busy','true');
   if('disabled' in control)control.disabled=true;
   control.textContent='準備下載…';
-  reportDownload('正在背景準備 '+filename+'，請留在此頁。');
+  reportDownload('正在向本站取得 '+filename+'…');
   try{
     const response=await fetch(target.href,{credentials:'same-origin'});
     if(!response.ok)throw new Error('檔案伺服器回應 HTTP '+response.status);
     const blob=await response.blob();
     if(!blob.size)throw new Error('檔案內容為空');
-    // A successful 404 fallback page must never be saved as a misleading ZIP/JPG.
     if(filename.toLowerCase().endsWith('.zip')){
-      const signature=new Uint8Array(await blob.slice(0,4).arrayBuffer());
-      if(signature[0]!==80||signature[1]!==75)throw new Error('伺服器回傳的不是 ZIP 檔案');
+      const bytes=new Uint8Array(await blob.slice(0,4).arrayBuffer());
+      if(bytes[0]!==80||bytes[1]!==75)throw new Error('伺服器未回傳有效 ZIP');
     }else if(filename.toLowerCase().endsWith('.jpg')||filename.toLowerCase().endsWith('.jpeg')){
-      const signature=new Uint8Array(await blob.slice(0,3).arrayBuffer());
-      if(signature[0]!==255||signature[1]!==216||signature[2]!==255)throw new Error('伺服器回傳的不是 JPG 原圖');
+      const bytes=new Uint8Array(await blob.slice(0,3).arrayBuffer());
+      if(bytes[0]!==255||bytes[1]!==216||bytes[2]!==255)throw new Error('伺服器未回傳有效 JPG');
     }
-    const localFile=URL.createObjectURL(blob);
+    const blobUrl=URL.createObjectURL(blob);
     try{
       const a=document.createElement('a');
-      a.href=localFile;
+      a.href=blobUrl;
       a.download=filename;
       a.style.display='none';
       document.body.append(a);
       a.click();
       a.remove();
-    }finally{
-      // WebViews may complete the native download asynchronously.
-      setTimeout(()=>URL.revokeObjectURL(localFile),120000);
-    }
-    reportDownload('已送出「'+filename+'」下載請求，可繼續閱讀。若 LINE 沒有儲存檔案，代表此版本的內建瀏覽器限制了網頁下載。');
+    }finally{setTimeout(()=>URL.revokeObjectURL(blobUrl),120000)}
+    reportDownload('已交給瀏覽器下載「'+filename+'」；請在裝置下載項目確認，網頁無法確認是否成功存檔。');
   }catch(err){
     reportDownload('下載失敗：'+(err?.message||String(err))+'。請重試。',true);
   }finally{
@@ -204,8 +299,13 @@ async function saveFileInPage(url,filename,control){
     control.textContent=previousLabel;
   }
 }
+function downloadSingleClipping(item,control){
+  if(inLineBrowser()){showLineDownloadOptions('image',item);return}
+  void saveFileInPage(item.src,originalFilename(item),control);
+}
 function downloadAllClippings(){
   if(!zipDownloadUrl){reportDownload('剪報尚未載入完成，請稍候重試。',true);return}
+  if(inLineBrowser()){showLineDownloadOptions('zip');return}
   void saveFileInPage(zipDownloadUrl,'工商時報_'+displayedDate.replaceAll('-','')+'.zip',zipButton);
 }
 zipButton.addEventListener('click',downloadAllClippings);
@@ -253,7 +353,7 @@ function render(){
     link.setAttribute('aria-label','下載第 '+(i+1)+' 張來源原圖');
     link.addEventListener('click',event=>{
       event.preventDefault();
-      void saveFileInPage(item.src,originalFilename(item),link);
+      downloadSingleClipping(item,link);
     });
     meta.append(info,link);card.append(btn,meta);gallery.append(card);
   });
@@ -313,7 +413,7 @@ try{
         button.addEventListener('click',event=>{
           event.preventDefault();
           const item=images[pswp.currIndex];
-          if(item)void saveFileInPage(item.src,originalFilename(item),button);
+          if(item)downloadSingleClipping(item,button);
         });
         pswp.on('change',update);update();
       }});
