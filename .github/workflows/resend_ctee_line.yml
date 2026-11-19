@@ -2,10 +2,6 @@ name: Resend published CTEE LINE Flex
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths:
-      - 'viewer/resend_browser_download_20261119.trigger'
 
 permissions:
   contents: read
@@ -16,9 +12,6 @@ concurrency:
 
 jobs:
   resend:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.head_commit.message == 'ops: resend 20261119 external browser downloader once'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -29,25 +22,6 @@ jobs:
           python-version: '3.10'
       - name: Install minimum dependency
         run: python -m pip install requests
-      - name: Verify current 2026-11-19 reader and external download page
-        run: |
-          python - <<'PY'
-          import requests
-          site='https://hub-google.github.io/ctee-line-bot/'
-          session=requests.Session()
-          def get(path):
-              response=session.get(site+path,params={'resend_check':'20261119_browser_v2'},timeout=25,headers={'Cache-Control':'no-cache'})
-              response.raise_for_status()
-              return response
-          reader=get('').text
-          downloader=get('download.html').text
-          feed=get('data.json').json()
-          assert 'ctee-external-browser-download-v2' in reader, 'Reader update is not live'
-          assert 'ctee-external-download-v1' in downloader, 'Download landing page is not live'
-          assert feed.get('date')=='2026-11-19', 'Unexpected edition date'
-          assert len(feed.get('images', []))==39, 'Unexpected clipping count'
-          print('Verified 2026-11-19: 39 images, updated external browser download page',flush=True)
-          PY
       - name: Verify published original clipping and resend LINE Flex
         env:
           SITE_URL: https://hub-google.github.io/ctee-line-bot/
