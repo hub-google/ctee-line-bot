@@ -2,10 +2,6 @@ name: Resend published CTEE LINE Flex
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths:
-      - 'viewer/resend_once_20261119.txt'
 
 permissions:
   contents: read
@@ -26,34 +22,6 @@ jobs:
           python-version: '3.10'
       - name: Install minimum dependency
         run: python -m pip install requests
-      - name: Verify updated mobile downloader is live before LINE push
-        env:
-          SITE_URL: https://hub-google.github.io/ctee-line-bot/
-        run: |
-          python - <<'PY'
-          import os, requests, time
-          site = os.environ["SITE_URL"].rstrip("/") + "/"
-          for attempt in range(30):
-              try:
-                  html = requests.get(site, params={"download_fix": "20261119"}, headers={"Cache-Control": "no-cache"}, timeout=20)
-                  html.raise_for_status()
-                  if "ctee-download-inline-v2" not in html.text or "filename.toLowerCase().endsWith('.zip')" not in html.text:
-                      raise ValueError("New in-page download code is not live yet")
-                  feed = requests.get(site + "data.json", params={"download_fix": "20261119"}, headers={"Cache-Control": "no-cache"}, timeout=20)
-                  feed.raise_for_status()
-                  data = feed.json()
-                  if data.get("date") != "2026-11-19":
-                      raise ValueError("Latest clipping date mismatch: " + str(data.get("date")))
-                  if len(data.get("images", [])) != 39:
-                      raise ValueError("Expected 39 original images")
-                  print("Verified live 2026-11-19 download patch and 39 images.", flush=True)
-                  break
-              except Exception as exc:
-                  print("Readiness attempt", attempt + 1, str(exc), flush=True)
-                  if attempt == 29:
-                      raise
-                  time.sleep(5)
-          PY
       - name: Verify published original clipping and resend LINE Flex
         env:
           SITE_URL: https://hub-google.github.io/ctee-line-bot/
