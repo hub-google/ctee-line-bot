@@ -42,6 +42,12 @@ jobs:
           python -m py_compile viewer/build_preview.py viewer/update_history.py viewer/send_preview.py
           python -c "from pathlib import Path; h=Path('viewer/public/index.html').read_text(); Path('/tmp/ctee-viewer.mjs').write_text(h.split('<script type=\"module\">',1)[1].split('</script>',1)[0])"
           node --check /tmp/ctee-viewer.mjs
+          python - <<'PY'
+          from pathlib import Path
+          page=Path('viewer/public/download.html').read_text(encoding='utf-8')
+          Path('/tmp/ctee-download.js').write_text(page.split('<script>',1)[1].split('</script>',1)[0])
+          PY
+          node --check /tmp/ctee-download.js
       - name: Verify public reader and fast-share LIFF configuration
         run: |
           python - <<'PY'
@@ -80,7 +86,7 @@ jobs:
           issue_date="${CTEE_TARGET_DATE:-$(TZ=Asia/Taipei date +%F)}"
           mkdir -p "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date"
           rsync -a --delete "viewer/public/archive/$issue_date/" "/tmp/ctee-gallery-history/viewer/public/archive/$issue_date/"
-          cp viewer/public/index.html viewer/public/share.html viewer/public/keywords.html viewer/public/data.json viewer/public/robots.txt viewer/public/liff-config.js /tmp/ctee-gallery-history/viewer/public/
+          cp viewer/public/index.html viewer/public/download.html viewer/public/share.html viewer/public/keywords.html viewer/public/data.json viewer/public/robots.txt viewer/public/liff-config.js /tmp/ctee-gallery-history/viewer/public/
           python viewer/update_history.py /tmp/ctee-gallery-history/viewer/public
           cd /tmp/ctee-gallery-history
           git add viewer/public
