@@ -7,6 +7,7 @@ on:
       - viewer/public/keywords.html
       - viewer/public/liff-config.js
       - viewer/public/index.html
+      - viewer/public/download.html
       - viewer/public/share.html
       - supabase/functions/ctee-keywords/index.ts
       - viewer/send_preview.py
@@ -58,6 +59,14 @@ jobs:
           node --check /tmp/ctee-viewer.mjs
           python - <<'PY'
           from pathlib import Path
+          html=Path('viewer/public/download.html').read_text(encoding='utf-8')
+          assert 'ctee-external-download-v1' in html
+          assert '<script>' in html
+          Path('/tmp/ctee-browser-download.js').write_text(html.split('<script>',1)[1].split('</script>',1)[0],encoding='utf-8')
+          PY
+          node --check /tmp/ctee-browser-download.js
+          python - <<'PY'
+          from pathlib import Path
           html=Path("viewer/public/share.html").read_text(encoding="utf-8")
           assert "liff.shareTargetPicker([card(date,count)]" in html
           assert "data.json" not in html and "PhotoSwipe" not in html
@@ -93,9 +102,9 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin viewer-archive
           git worktree add --detach /tmp/ctee-keyword-site origin/viewer-archive
-          cp viewer/public/index.html viewer/public/share.html viewer/public/keywords.html viewer/public/liff-config.js /tmp/ctee-keyword-site/viewer/public/
+          cp viewer/public/index.html viewer/public/download.html viewer/public/share.html viewer/public/keywords.html viewer/public/liff-config.js /tmp/ctee-keyword-site/viewer/public/
           cd /tmp/ctee-keyword-site
-          git add viewer/public/index.html viewer/public/share.html viewer/public/keywords.html viewer/public/liff-config.js
+          git add viewer/public/index.html viewer/public/download.html viewer/public/share.html viewer/public/keywords.html viewer/public/liff-config.js
           if ! git diff --cached --quiet; then
             git commit -m "site: publish keyword suggestion page"
             git push origin HEAD:viewer-archive
