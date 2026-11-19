@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   resend:
-    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'ops: one-off 20261119 LINE save UX resend'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.head_commit.message == 'ops: one-off 20261119 LINE save UX resend'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
