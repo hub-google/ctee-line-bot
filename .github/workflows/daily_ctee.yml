@@ -1,11 +1,6 @@
 name: Daily CTEE High-Quality Clippings to LINE
 
 on:
-  # Temporary manual test trigger; remove after this run starts.
-  push:
-    branches: [master]
-    paths:
-      - '.github/workflows/daily_ctee.yml'
   schedule:
     # Daily 06:00 Asia/Taipei (GitHub scheduled runs may be delayed)
     - cron: '0 22 * * *'
