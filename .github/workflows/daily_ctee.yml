@@ -1,6 +1,11 @@
 name: Daily CTEE High-Quality Clippings to LINE
 
 on:
+  # One-time test trigger: this path-specific push is removed after the live run.
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/daily_ctee.yml'
   schedule:
     # Daily 06:00 Asia/Taipei (GitHub scheduled runs may be delayed)
     - cron: '0 22 * * *'
@@ -96,12 +101,12 @@ jobs:
         env:
           CTEE_USER: ${{ secrets.CTEE_USER }}
           CTEE_PASS: ${{ secrets.CTEE_PASS }}
-          CTEE_TARGET_DATE: ${{ github.event_name == 'push' && '2026-11-18' || inputs.target_date || '' }}
+          CTEE_TARGET_DATE: ${{ inputs.target_date || '' }}
         run: python viewer/build_preview.py
       - name: Merge new issue into persistent, separate archive branch
         shell: bash
         env:
-          CTEE_TARGET_DATE: ${{ github.event_name == 'push' && '2026-11-18' || inputs.target_date || '' }}
+          CTEE_TARGET_DATE: ${{ inputs.target_date || '' }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
