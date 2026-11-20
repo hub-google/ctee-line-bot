@@ -1,0 +1,49 @@
+{
+  "build_ref": "f7062244a5e143ccb4c5ff0cb3fe285f5e5e7981",
+  "date_label": "2026/11/20",
+  "date": "2026-11-20",
+  "total": 5,
+  "zip": "archive/2026-11-20/工商時報_20261120.zip",
+  "images": [
+    {
+      "src": "archive/2026-11-20/images/20261120_01_匯率、央行.jpg",
+      "width": 2503,
+      "height": 695,
+      "sha256": "b5bfdf861ed0825aa69e5c690aa89a6d17203606bbb4a55268193e3fc53c8649",
+      "keyword": "匯率、央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261120/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-20/images/20261120_02_央行.jpg",
+      "width": 816,
+      "height": 651,
+      "sha256": "c617f9918551b1f85030a829605ace797775616dae6b5d286cccba0bba254a66",
+      "keyword": "央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261120/a04aa4"
+    },
+    {
+      "src": "archive/2026-11-20/images/20261120_03_壽險.jpg",
+      "width": 1659,
+      "height": 1116,
+      "sha256": "c9728c3f4c1ac7b5a3d38233548b46bd3ff2a6b71e5063011ba7e46036bbc435",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261120/a12aa12"
+    },
+    {
+      "src": "archive/2026-11-20/images/20261120_04_凱基.jpg",
+      "width": 2502,
+      "height": 655,
+      "sha256": "f5c8f0563b6d16c6eedceb6779153891490b4bb2d44c5d8f26766175cddc612a",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261120/a40ac4"
+    },
+    {
+      "src": "archive/2026-11-20/images/20261120_05_人壽、凱基.jpg",
+      "width": 1789,
+      "height": 696,
+      "sha256": "ef4077d1429dd1b4e4bed4d659a0d937ec963c39bad51657513d2968ec016454",
+      "keyword": "人壽、凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261120/a40ac4"
+    }
+  ]
+}
