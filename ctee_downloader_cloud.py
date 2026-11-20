@@ -304,7 +304,14 @@ async def run_worker():
     if not os.path.exists(temp_folder): os.makedirs(temp_folder)
     
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        # GitHub hosted Ubuntu runners include Chrome; use it when explicitly
+        # requested, without downloading a separate Playwright browser each run.
+        # Keep bundled Chromium as the default for other/legacy workflows.
+        browser_channel = os.getenv("CTEE_BROWSER_CHANNEL", "").strip()
+        launch_options = {"headless": True}
+        if browser_channel:
+            launch_options["channel"] = browser_channel
+        browser = await p.chromium.launch(**launch_options)
         context = await browser.new_context(viewport={'width': 1280, 'height': 800})
         page = await context.new_page()
         
