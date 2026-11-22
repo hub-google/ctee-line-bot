@@ -1,0 +1,73 @@
+{
+  "build_ref": "8e7f8f55745c745fd3f4ad46a4df2b8297ef055b",
+  "date_label": "2026/11/22",
+  "date": "2026-11-22",
+  "total": 8,
+  "zip": "archive/2026-11-22/工商時報_20261122.zip",
+  "images": [
+    {
+      "src": "archive/2026-11-22/images/20261122_01_央行、金管會.jpg",
+      "width": 1783,
+      "height": 1214,
+      "sha256": "b24410f7c38f29c833c81dfbd5222e5340486e9e7cddc197419655ec53e818cc",
+      "keyword": "央行、金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_02_壽險、金控.jpg",
+      "width": 704,
+      "height": 1511,
+      "sha256": "6968844e1be6c325f9559774e0552b719fa6aeb754e4375d41af8291bdb51847",
+      "keyword": "壽險、金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_03_金管會.jpg",
+      "width": 2485,
+      "height": 1407,
+      "sha256": "b9d7ac4285e39b3ba246244f120a1dbcd3f042ecd8f3279718e906eea9e68601",
+      "keyword": "金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_04_凱基.jpg",
+      "width": 816,
+      "height": 1472,
+      "sha256": "f4c9812cf842136f9e57e0a08cf1ce5e6e6ae1a6400a463e8862eeb999429f0d",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_05_金控.jpg",
+      "width": 816,
+      "height": 1218,
+      "sha256": "ea47e6938b76cd2b04e8caf2f49a458eb76bb4f81235bf2c2a12ff5c8765344e",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a04aa4"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_06_人壽、國泰人壽、壽險、富邦人壽.jpg",
+      "width": 2502,
+      "height": 1061,
+      "sha256": "a822e7942ac3e3fe0331718465e140a0127a1a789b831eb4cd051ed078464ebd",
+      "keyword": "人壽、國泰人壽、壽險、富邦人壽",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a06aa6"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_07_人壽、凱基、匯率、南山、壽險、外幣.jpg",
+      "width": 1659,
+      "height": 833,
+      "sha256": "ca5df606192c2fef9d7f4549ec7ebdc3353e2a0d66c528e32383e39452999cb1",
+      "keyword": "人壽、凱基、匯率、南山、壽險、外幣",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a06aa6"
+    },
+    {
+      "src": "archive/2026-11-22/images/20261122_08_匯率、外幣.jpg",
+      "width": 816,
+      "height": 983,
+      "sha256": "3c739dc58aa95cd44d0c20f9c29243448333c02991fb890553d0f3e9309dc0cd",
+      "keyword": "匯率、外幣",
+      "article_url": "https://readers.ctee.com.tw/cm/20261122/a06aa6"
+    }
+  ]
+}

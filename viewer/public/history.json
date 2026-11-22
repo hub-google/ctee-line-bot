@@ -1,6 +1,12 @@
 {
   "dates": [
     {
+      "date": "2026-11-22",
+      "date_label": "2026/11/22",
+      "count": 8,
+      "zip": "archive/2026-11-22/工商時報_20261122.zip"
+    },
+    {
       "date": "2026-11-21",
       "date_label": "2026/11/21",
       "count": 11,
@@ -25,5 +31,5 @@
       "zip": "archive/2026-11-18/工商時報_20261118.zip"
     }
   ],
-  "total_days": 4
+  "total_days": 5
 }
