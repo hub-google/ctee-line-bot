@@ -1,0 +1,97 @@
+{
+  "build_ref": "8e7f8f55745c745fd3f4ad46a4df2b8297ef055b",
+  "date_label": "2026/11/24",
+  "date": "2026-11-24",
+  "total": 11,
+  "zip": "archive/2026-11-24/工商時報_20261124.zip",
+  "images": [
+    {
+      "src": "archive/2026-11-24/images/20261124_01_壽險.jpg",
+      "width": 1237,
+      "height": 1007,
+      "sha256": "718e8117a3534429e90d665eb07de50432b7b80170c2ac1c5b1609133cf6c89d",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_02_金控.jpg",
+      "width": 1237,
+      "height": 1006,
+      "sha256": "b6e8f829051ab8b5932718c46a9fcd7418faf87f305ab447fd4b387ed2c854b0",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a02aa2"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_03_金控.jpg",
+      "width": 1659,
+      "height": 682,
+      "sha256": "9025530a4c48197300c503f182642df806c0654138ceb9d3dee265cc3074325c",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_04_壽險.jpg",
+      "width": 2485,
+      "height": 1315,
+      "sha256": "2dfdbd18a674b506bdb6393c4c661c7d48b9ce300a7fae617cd63f84e00de384",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_05_壽險.jpg",
+      "width": 1659,
+      "height": 680,
+      "sha256": "640a0b994c704d68e3853d696f41512b764cf0a72d5dc5f70f320d2273ea8da3",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_06_金管會.jpg",
+      "width": 817,
+      "height": 1787,
+      "sha256": "5319814bdf60918f0bda35cd6bc1185064bb6872c8c50293af1c3b70e6c2429d",
+      "keyword": "金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_07_央行.jpg",
+      "width": 1659,
+      "height": 717,
+      "sha256": "9bc90ce3f07ea72db318affae793ce7a45ed37db73893bdfcf0ed07954beaecc",
+      "keyword": "央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a09aa9"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_08_匯率、央行、金管會.jpg",
+      "width": 2499,
+      "height": 1359,
+      "sha256": "4c95fbd4fa538aea1e9884732b30c642f8a68ed5220ab4d79badb6d0b8cd22e6",
+      "keyword": "匯率、央行、金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a11aa11"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_09_央行、金控.jpg",
+      "width": 1659,
+      "height": 891,
+      "sha256": "e596d06deed93a473299c6dbb464bbfdd657ccee7c37a09d75b3900b15eb9c07",
+      "keyword": "央行、金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a11aa11"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_10_凱基.jpg",
+      "width": 1659,
+      "height": 862,
+      "sha256": "df3a0c573c103d710f319f60eb81eda77746b0b5da9e568fe3bbf836803cdce3",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a31ab7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_11_產險.jpg",
+      "width": 646,
+      "height": 1293,
+      "sha256": "2edf5105d463df77ed9378dd3912d731ed0e069a6aaa9cc1c71498edca90ad55",
+      "keyword": "產險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a41ac5"
+    }
+  ]
+}

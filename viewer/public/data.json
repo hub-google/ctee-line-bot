@@ -1,281 +1,97 @@
 {
   "build_ref": "8e7f8f55745c745fd3f4ad46a4df2b8297ef055b",
-  "date_label": "2026/11/23",
-  "date": "2026-11-23",
-  "total": 34,
-  "zip": "archive/2026-11-23/工商時報_20261123.zip",
+  "date_label": "2026/11/24",
+  "date": "2026-11-24",
+  "total": 11,
+  "zip": "archive/2026-11-24/工商時報_20261124.zip",
   "images": [
     {
-      "src": "archive/2026-11-23/images/20261123_01_金管會.jpg",
-      "width": 1247,
-      "height": 885,
-      "sha256": "ef46bf1a096f7298dc56d0e28d97f6af4447f0f3cca13e8e627fcadd58d94479",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a02aa2"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_02_金管會.jpg",
-      "width": 2507,
-      "height": 1461,
-      "sha256": "f209762c1e4bb2b9395d236f69fd0ba029ec77314ca9f9268c29d94584df4109",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a02aa2"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_03_匯率、壽險.jpg",
-      "width": 1659,
-      "height": 796,
-      "sha256": "215f6ee192cf5d7de397fb3429114775fa15accc3dc41321cbf5a326402e0512",
-      "keyword": "匯率、壽險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a02aa2"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_04_金管會.jpg",
-      "width": 2501,
-      "height": 1152,
-      "sha256": "833884b073fbb140d00512a73fffe1b9ed0d6e0bd21a4506e443521f6e1d70e4",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a09aa9"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_05_金管會.jpg",
-      "width": 1659,
-      "height": 623,
-      "sha256": "d916fd100c183386a81fa1360a33c58af13c465b118aef20a7ea43dfc072b846",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a09aa9"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_06_金管會.jpg",
-      "width": 1659,
-      "height": 781,
-      "sha256": "c6338db3cc6f493912f20aa699ce515c13051147a99b327a7271d8e8f812905f",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a09aa9"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_07_金管會.jpg",
-      "width": 819,
-      "height": 2038,
-      "sha256": "39aa02389d7f85644ac30c26d52c70c6809189ff4b43f81505ad8c9e55970d23",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a09aa9"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_08_金管會.jpg",
+      "src": "archive/2026-11-24/images/20261124_01_壽險.jpg",
       "width": 1237,
-      "height": 1458,
-      "sha256": "bb9ad65de29de38d18e746e4770ab08cdfd42531508b6b2168976af1a674f254",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a09aa9"
+      "height": 1007,
+      "sha256": "718e8117a3534429e90d665eb07de50432b7b80170c2ac1c5b1609133cf6c89d",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a02aa2"
     },
     {
-      "src": "archive/2026-11-23/images/20261123_09_金控.jpg",
-      "width": 1238,
-      "height": 1458,
-      "sha256": "80aeff9c9171774b15a6610b347c862925b77ffe3c84b1465790356350029f0d",
+      "src": "archive/2026-11-24/images/20261124_02_金控.jpg",
+      "width": 1237,
+      "height": 1006,
+      "sha256": "b6e8f829051ab8b5932718c46a9fcd7418faf87f305ab447fd4b387ed2c854b0",
       "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a09aa9"
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a02aa2"
     },
     {
-      "src": "archive/2026-11-23/images/20261123_10_人壽、壽險、金管會.jpg",
-      "width": 2502,
-      "height": 1324,
-      "sha256": "ea05d61a905aa6e564bb388a2d18690e887f6bd34cfc7fb4002a5651c1e8c770",
-      "keyword": "人壽、壽險、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_11_人壽、金管會.jpg",
-      "width": 2502,
-      "height": 761,
-      "sha256": "629e0a542fdde5c5d0d277ccc50d45f5e43b43dcd0585af138252efc9af39daa",
-      "keyword": "人壽、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_12_人壽、南山.jpg",
-      "width": 1216,
-      "height": 2083,
-      "sha256": "5a9974c1f902b1afa88991338e9dc45121f9720c46aed638e0a751627304c523",
-      "keyword": "人壽、南山",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_13_產險.jpg",
-      "width": 1210,
-      "height": 2084,
-      "sha256": "713e85c6241a20cb462eb5280db101788799ab8dfdf813ccb3670b7ced968e9a",
-      "keyword": "產險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_14_人壽、富邦人壽、產險、金控、金管會.jpg",
-      "width": 2515,
-      "height": 535,
-      "sha256": "5f9560749ef0383268fd0370d99c1c526e7da58bf99b65042271bf4ec0e63f54",
-      "keyword": "人壽、富邦人壽、產險、金控、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_15_人壽、壽險、富邦人壽、金管會.jpg",
-      "width": 821,
-      "height": 1359,
-      "sha256": "7e71268c124fbae07c44c0aa6582022fc1187f35e038256f1c2c249febfffd62",
-      "keyword": "人壽、壽險、富邦人壽、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_16_金管會.jpg",
-      "width": 816,
-      "height": 1359,
-      "sha256": "276b20382dd1dffbc1299de1ca290f18f142f2996ec7e343934a71fac4443266",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_17_產險.jpg",
-      "width": 828,
-      "height": 1359,
-      "sha256": "189ae7c52672d8c58273a202c3dd5bcaf972a6d50a16fd4c3aaf07dd1724d412",
-      "keyword": "產險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_18_產險.jpg",
-      "width": 1210,
-      "height": 2084,
-      "sha256": "dd2f9ca3096f3658f5a48e009e7722952466320516ae204066019cda3bbaff8f",
-      "keyword": "產險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_19_金管會.jpg",
-      "width": 1210,
-      "height": 2085,
-      "sha256": "17aa48dfae07f7637486072042eef7b387759d97b3fa53e2444a41cedb2d02d9",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a11aa11"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_20_金管會.jpg",
-      "width": 2502,
-      "height": 1036,
-      "sha256": "4e2e236c76c45ae0fcadfae471381099b9b190a21364115e0ccf5e8287917824",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a13aa13"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_21_人壽、遠雄人壽.jpg",
-      "width": 2503,
-      "height": 763,
-      "sha256": "53fe66b26f8913c1925b76150469d6585c3a9728df283aea788f86d9cf5ae1a3",
-      "keyword": "人壽、遠雄人壽",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a13aa13"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_22_金管會.jpg",
-      "width": 1210,
-      "height": 1268,
-      "sha256": "141deed9a25c723c26d0ad2fc1ede58ab18522e216efd01ad1c36270086b0176",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a13aa13"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_23_人壽、友邦人壽、壽險、金管會.jpg",
-      "width": 1211,
-      "height": 1268,
-      "sha256": "56b69f2731591510e9f96d5b154047235ba6d5f541b4ec5c12cf5bdbf42fa2f7",
-      "keyword": "人壽、友邦人壽、壽險、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a13aa13"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_24_人壽、國壽、國泰人壽、產險、金控、金管會.jpg",
-      "width": 2504,
-      "height": 1887,
-      "sha256": "7b4558fba990a14faba81dcfc9da74a7f7d329b031dda2679a7569d16f60a184",
-      "keyword": "人壽、國壽、國泰人壽、產險、金控、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a13aa13"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_25_金控.jpg",
-      "width": 1789,
-      "height": 635,
-      "sha256": "041d45d4a5c69d9b12a898bf6ec245124aa08eea921c9653db025bbb1f43ab17",
-      "keyword": "金控",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a26ab2"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_26_金管會.jpg",
-      "width": 1792,
-      "height": 940,
-      "sha256": "7e98dd8e34861c0a97986029994e27551a4abc72789af8349ba507cdc9c6d2ab",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a26ab2"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_27_金管會.jpg",
-      "width": 1789,
-      "height": 1010,
-      "sha256": "63161f1a4d46e7a627518a569e28dcace0e68044b8498f697543c08ee61441ac",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a30ab6"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_28_金管會.jpg",
-      "width": 1095,
-      "height": 765,
-      "sha256": "9321290112feafd15e6d568d6d3b57f9fd942e938f64294181c3ab5380e91715",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a30ab6"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_29_匯率.jpg",
-      "width": 1065,
-      "height": 1003,
-      "sha256": "673ccf8e0728d8ae23588867657664f45a274719a1d2da8773ff1d7732df8d0c",
-      "keyword": "匯率",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a30ab6"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_30_金管會.jpg",
-      "width": 2514,
-      "height": 1317,
-      "sha256": "3a2275feb1609174f3049a1e63c025d5ab6f30fec7a339bd7b55c597e5f80a2c",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a32ab8"
-    },
-    {
-      "src": "archive/2026-11-23/images/20261123_31_金管會.jpg",
+      "src": "archive/2026-11-24/images/20261124_03_金控.jpg",
       "width": 1659,
-      "height": 728,
-      "sha256": "5a476e1a9da761bdee15c96f80928308a1870d1642f31738e36fbb3442f8b3cf",
-      "keyword": "金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a38ac2"
+      "height": 682,
+      "sha256": "9025530a4c48197300c503f182642df806c0654138ceb9d3dee265cc3074325c",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a03aa3"
     },
     {
-      "src": "archive/2026-11-23/images/20261123_32_央行.jpg",
-      "width": 2498,
-      "height": 1445,
-      "sha256": "3d8af299b275241bb46952c5ea0c5538125bec0e46b96b6682fbc618d353b5ba",
+      "src": "archive/2026-11-24/images/20261124_04_壽險.jpg",
+      "width": 2485,
+      "height": 1315,
+      "sha256": "2dfdbd18a674b506bdb6393c4c661c7d48b9ce300a7fae617cd63f84e00de384",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_05_壽險.jpg",
+      "width": 1659,
+      "height": 680,
+      "sha256": "640a0b994c704d68e3853d696f41512b764cf0a72d5dc5f70f320d2273ea8da3",
+      "keyword": "壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_06_金管會.jpg",
+      "width": 817,
+      "height": 1787,
+      "sha256": "5319814bdf60918f0bda35cd6bc1185064bb6872c8c50293af1c3b70e6c2429d",
+      "keyword": "金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a07aa7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_07_央行.jpg",
+      "width": 1659,
+      "height": 717,
+      "sha256": "9bc90ce3f07ea72db318affae793ce7a45ed37db73893bdfcf0ed07954beaecc",
       "keyword": "央行",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a40ac4"
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a09aa9"
     },
     {
-      "src": "archive/2026-11-23/images/20261123_33_南山、產險、金管會.jpg",
-      "width": 1237,
-      "height": 1367,
-      "sha256": "49e6579a23f84f2196b4881970aa9abcc4fd1984d0f0eb34e625291cf4b5aa37",
-      "keyword": "南山、產險、金管會",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a40ac4"
+      "src": "archive/2026-11-24/images/20261124_08_匯率、央行、金管會.jpg",
+      "width": 2499,
+      "height": 1359,
+      "sha256": "4c95fbd4fa538aea1e9884732b30c642f8a68ed5220ab4d79badb6d0b8cd22e6",
+      "keyword": "匯率、央行、金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a11aa11"
     },
     {
-      "src": "archive/2026-11-23/images/20261123_34_人壽、凱基、壽險.jpg",
-      "width": 1237,
-      "height": 1370,
-      "sha256": "6bfcdc99e51208eb2431f855f87c9f059d20ab1f3eb5953e4e7cb80e9fdf2367",
-      "keyword": "人壽、凱基、壽險",
-      "article_url": "https://readers.ctee.com.tw/cm/20261123/a40ac4"
+      "src": "archive/2026-11-24/images/20261124_09_央行、金控.jpg",
+      "width": 1659,
+      "height": 891,
+      "sha256": "e596d06deed93a473299c6dbb464bbfdd657ccee7c37a09d75b3900b15eb9c07",
+      "keyword": "央行、金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a11aa11"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_10_凱基.jpg",
+      "width": 1659,
+      "height": 862,
+      "sha256": "df3a0c573c103d710f319f60eb81eda77746b0b5da9e568fe3bbf836803cdce3",
+      "keyword": "凱基",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a31ab7"
+    },
+    {
+      "src": "archive/2026-11-24/images/20261124_11_產險.jpg",
+      "width": 646,
+      "height": 1293,
+      "sha256": "2edf5105d463df77ed9378dd3912d731ed0e069a6aaa9cc1c71498edca90ad55",
+      "keyword": "產險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261124/a41ac5"
     }
   ]
 }
