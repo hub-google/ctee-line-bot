@@ -1,0 +1,121 @@
+{
+  "build_ref": "8e7f8f55745c745fd3f4ad46a4df2b8297ef055b",
+  "date_label": "2026/11/25",
+  "date": "2026-11-25",
+  "total": 14,
+  "zip": "archive/2026-11-25/工商時報_20261125.zip",
+  "images": [
+    {
+      "src": "archive/2026-11-25/images/20261125_01_匯率、央行.jpg",
+      "width": 1659,
+      "height": 700,
+      "sha256": "0768396f868373a2b4619c6d9bb57e8f32461778c6af303d9544f7d23e904a07",
+      "keyword": "匯率、央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a01aa1"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_02_金管會.jpg",
+      "width": 1659,
+      "height": 996,
+      "sha256": "44aaef11be569b85f0c8e829416b80bd347204f036734c55f8dfce05d85dbf4d",
+      "keyword": "金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a03aa3"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_03_匯率、匯銀、央行.jpg",
+      "width": 1879,
+      "height": 957,
+      "sha256": "e34ba4dfe79c8bf603645ef829ed920994b09722854d9f59b59c1ee937c20122",
+      "keyword": "匯率、匯銀、央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a05aa5"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_04_匯率、壽險、央行、金控.jpg",
+      "width": 1247,
+      "height": 659,
+      "sha256": "43897cbcb90c3a6e1ae3cc24bbcfe906161d4efaf1b84a597b1fa26ff875b8e1",
+      "keyword": "匯率、壽險、央行、金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a05aa5"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_05_人壽、國泰人壽、壽險.jpg",
+      "width": 1846,
+      "height": 608,
+      "sha256": "41d07d75b25d7def3873ced9e8ed739bec2691864949c6bb91c827bf413ec9e2",
+      "keyword": "人壽、國泰人壽、壽險",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a05aa5"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_06_金控.jpg",
+      "width": 1223,
+      "height": 939,
+      "sha256": "942b57cd4ba9524a344d685242498876ff3ab57cd61181f6c8f7dc5b6a941988",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a06aa6"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_07_央行.jpg",
+      "width": 1669,
+      "height": 1146,
+      "sha256": "cc0bf60d944a814188af332303ac2038f784a350be5dc59430fb43f9c2fed6f0",
+      "keyword": "央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a06aa6"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_08_金控.jpg",
+      "width": 2502,
+      "height": 1310,
+      "sha256": "afa9155d0296bffd37d06ee97e6a2cfaaa267d6b9d3a5a6460ec178fcd48f4bf",
+      "keyword": "金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a13aa11"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_09_央行.jpg",
+      "width": 1659,
+      "height": 778,
+      "sha256": "a174be8780d65bd690f1cacada53c41026e41da5b8df8af52ecbf3ccc810a14c",
+      "keyword": "央行",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a13aa11"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_10_金管會.jpg",
+      "width": 1659,
+      "height": 627,
+      "sha256": "dd3da4f40743b3233e5784b92089efa00af072185a82fd2853c1df0b9e50e37e",
+      "keyword": "金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a13aa11"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_11_金管會.jpg",
+      "width": 816,
+      "height": 1043,
+      "sha256": "0d84a60f2c303c8b308355a88b106c59c1ef3385461cf9497e9f475ea3e33621",
+      "keyword": "金管會",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a13aa11"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_12_凱基、金控.jpg",
+      "width": 1237,
+      "height": 1612,
+      "sha256": "863d8c85d61a15cb6cce0f6361a9e0e3fb871f655176fea3407babc91922a54f",
+      "keyword": "凱基、金控",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a13aa11"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_13_人壽.jpg",
+      "width": 2502,
+      "height": 1015,
+      "sha256": "85d47f8400af8bee6a5e6d0e8c22684a537d69b64ca3f1325766f3df4c5449aa",
+      "keyword": "人壽",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a40ac4"
+    },
+    {
+      "src": "archive/2026-11-25/images/20261125_14_長照.jpg",
+      "width": 1659,
+      "height": 633,
+      "sha256": "33e0d26adcacac7d0baf632d325490e20d9b9aaab43b6baf9754a5ecaa53e679",
+      "keyword": "長照",
+      "article_url": "https://readers.ctee.com.tw/cm/20261125/a40ac4"
+    }
+  ]
+}
